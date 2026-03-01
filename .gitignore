@@ -35,3 +35,8 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Developer-specific Docker configuration ###
+# This file allows developers to override Testcontainers Docker settings
+# without modifying tracked files. See DOCKER_SETUP.md for details.
+testcontainers.properties

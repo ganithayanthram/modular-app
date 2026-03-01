@@ -1,7 +1,6 @@
 package com.ganithyanthram.modularapp;
 
 import com.ganithyanthram.modularapp.config.DockerEnvironmentDetector;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -17,13 +16,17 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Sample Integration Test
- * 
+ *
  * Integration tests should:
  * - Test component interactions
  * - Use PostgreSQL TestContainer
  * - Test Spring context loading
  * - Be tagged with @Tag("integration")
  * - Follow naming convention: *ITest.java
+ *
+ * Docker/Testcontainers configuration is now driven by Spring properties in
+ * application-{profile}.properties and applied in the static block BEFORE
+ * @Container fields initialize.
  */
 @SpringBootTest
 @Testcontainers
@@ -33,8 +36,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class SampleITest {
 
     static {
-        // Configure TestContainers BEFORE container initialization
-        DockerEnvironmentDetector.configureForMultipass();
+        // Configure Testcontainers BEFORE @Container fields initialize
+        DockerEnvironmentDetector.configureFromProfile("test");
     }
 
     @Container

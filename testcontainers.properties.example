@@ -1,0 +1,33 @@
+# Example Testcontainers Configuration
+# Copy this file to 'testcontainers.properties' (gitignored) and customize for your setup.
+
+# ========================================
+# MULTIPASS VM DOCKER SETUP
+# ========================================
+# Uncomment and customize these settings if you run Docker inside a Multipass VM:
+
+testcontainers.docker.remote=true
+testcontainers.docker.host=tcp://192.168.64.8:2376
+testcontainers.ryuk.disabled=true
+testcontainers.checks.disabled=true
+testcontainers.docker.api-version=1.44
+
+# ========================================
+# HOST DOCKER SETUP (Docker Desktop / Colima)
+# ========================================
+# If you use Docker Desktop or Colima, you don't need this file at all.
+# The defaults in application-test.properties will work automatically.
+# 
+# But if you want to explicitly configure it, uncomment these:
+# testcontainers.docker.remote=false
+# testcontainers.ryuk.disabled=false
+# testcontainers.checks.disabled=false
+
+# ========================================
+# NOTES
+# ========================================
+# - Replace 192.168.64.8 with your Multipass VM's actual IP address
+# - Get your VM IP with: multipass info docker-vm | grep IPv4
+# - This file is gitignored, so your local settings won't be committed
+# - See DOCKER_SETUP.md for detailed setup instructions
+

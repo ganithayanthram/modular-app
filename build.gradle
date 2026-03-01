@@ -138,6 +138,82 @@ jooq {
 	}
 }
 
+// Helper function to load Testcontainers configuration with override support
+// Precedence (highest to lowest):
+// 1. Environment variables (TESTCONTAINERS_DOCKER_HOST, etc.)
+// 2. Gradle project properties (-Ptestcontainers.docker.host=...)
+// 3. testcontainers.properties file in project root (gitignored)
+// 4. application-test.properties defaults
+def loadTestcontainersConfig() {
+	def config = [:]
+
+	// Load defaults from application-test.properties
+	def testPropsFile = file("src/test/resources/application-test.properties")
+	def testProps = new Properties()
+	if (testPropsFile.exists()) {
+		testPropsFile.withInputStream { testProps.load(it) }
+	}
+
+	// Load overrides from testcontainers.properties (gitignored, developer-specific)
+	def overridePropsFile = file("testcontainers.properties")
+	def overrideProps = new Properties()
+	if (overridePropsFile.exists()) {
+		overridePropsFile.withInputStream { overrideProps.load(it) }
+		println "✅ Loaded Docker configuration from testcontainers.properties"
+	}
+
+	// Merge properties (overrideProps takes precedence over testProps)
+	def mergedProps = new Properties()
+	mergedProps.putAll(testProps)
+	mergedProps.putAll(overrideProps)
+
+	// Apply Gradle project properties (highest precedence for properties)
+	['testcontainers.docker.remote', 'testcontainers.docker.host',
+	 'testcontainers.ryuk.disabled', 'testcontainers.checks.disabled',
+	 'testcontainers.docker.api-version'].each { key ->
+		if (project.hasProperty(key)) {
+			mergedProps.setProperty(key, project.property(key))
+		}
+	}
+
+	// Build environment variable map
+	def remoteDocker = mergedProps.getProperty('testcontainers.docker.remote', 'false')
+	def dockerHost = mergedProps.getProperty('testcontainers.docker.host', '')
+
+	// Only set DOCKER_HOST if remote Docker is enabled and host is specified
+	if (remoteDocker == 'true' && !dockerHost.isEmpty()) {
+		config['DOCKER_HOST'] = dockerHost
+		println "🐳 Using remote Docker: ${dockerHost}"
+	} else {
+		println "🐳 Using local Docker (auto-detect socket)"
+	}
+
+	config['TESTCONTAINERS_RYUK_DISABLED'] = mergedProps.getProperty('testcontainers.ryuk.disabled', 'false')
+	config['TESTCONTAINERS_CHECKS_DISABLE'] = mergedProps.getProperty('testcontainers.checks.disabled', 'false')
+
+	def apiVersion = mergedProps.getProperty('testcontainers.docker.api-version', '')
+	if (!apiVersion.isEmpty()) {
+		config['DOCKER_API_VERSION'] = apiVersion
+	}
+
+	// Environment variables override everything
+	if (System.getenv('TESTCONTAINERS_DOCKER_HOST')) {
+		config['DOCKER_HOST'] = System.getenv('TESTCONTAINERS_DOCKER_HOST')
+		println "🐳 Using Docker host from environment variable: ${config['DOCKER_HOST']}"
+	}
+	if (System.getenv('TESTCONTAINERS_RYUK_DISABLED')) {
+		config['TESTCONTAINERS_RYUK_DISABLED'] = System.getenv('TESTCONTAINERS_RYUK_DISABLED')
+	}
+	if (System.getenv('TESTCONTAINERS_CHECKS_DISABLE')) {
+		config['TESTCONTAINERS_CHECKS_DISABLE'] = System.getenv('TESTCONTAINERS_CHECKS_DISABLE')
+	}
+	if (System.getenv('DOCKER_API_VERSION')) {
+		config['DOCKER_API_VERSION'] = System.getenv('DOCKER_API_VERSION')
+	}
+
+	return config
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
 	reports {
@@ -150,14 +226,11 @@ tasks.named('test') {
 	}
 
 	// 'gradle build' runs this task and includes ALL tests (unit + integration + API).
-	// Integration and API tests use Testcontainers, which needs to reach the Docker daemon
-	// inside the Multipass VM.  The DockerEnvironmentDetector reflection approach is blocked
-	// by the Java 17+ module system, so we set the variables here at the process level
-	// where they are guaranteed to be visible to System.getenv() inside the test JVM.
-	environment 'DOCKER_HOST', 'tcp://192.168.64.8:2376'
-	environment 'TESTCONTAINERS_RYUK_DISABLED', 'true'
-	environment 'TESTCONTAINERS_CHECKS_DISABLE', 'true'
-	environment 'DOCKER_API_VERSION', '1.44'
+	// Docker/Testcontainers configuration is loaded with override support.
+	def testcontainersConfig = loadTestcontainersConfig()
+	testcontainersConfig.each { key, value ->
+		environment key, value
+	}
 }
 
 tasks.withType(Test) {
@@ -225,13 +298,11 @@ task integrationTest(type: Test) {
 		setFailOnNoMatchingTests(false)
 	}
 
-	// Configure TestContainers to connect to the Docker daemon running inside
-	// the Multipass VM (docker-vm, IP 192.168.64.8).  The daemon is configured
-	// with TLS disabled and listens on tcp://0.0.0.0:2376.
-	environment 'DOCKER_HOST', 'tcp://192.168.64.8:2376'
-	environment 'TESTCONTAINERS_RYUK_DISABLED', 'true'
-	environment 'TESTCONTAINERS_CHECKS_DISABLE', 'true'
-	environment 'DOCKER_API_VERSION', '1.44'
+	// Docker/Testcontainers configuration is loaded with override support.
+	def testcontainersConfig = loadTestcontainersConfig()
+	testcontainersConfig.each { key, value ->
+		environment key, value
+	}
 
 	// Generate JaCoCo execution data (report generated separately)
 	jacoco {

@@ -180,6 +180,12 @@ task unitTest(type: Test) {
 	description = 'Runs unit tests only (tagged with @Tag("unit"))'
 	group = 'verification'
 
+	// Wire up test sources and classpath from the 'test' source set so Gradle
+	// can discover compiled test classes (required for custom Test tasks in Gradle 9+)
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	dependsOn testClasses
+
 	useJUnitPlatform {
 		includeTags 'unit'
 	}
@@ -241,6 +247,12 @@ task apiTest(type: Test) {
 	description = 'Runs API tests only (tagged with @Tag("api"))'
 	group = 'verification'
 
+	// Wire up test sources and classpath from the 'test' source set so Gradle
+	// can discover compiled test classes (required for custom Test tasks in Gradle 9+)
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	dependsOn testClasses
+
 	useJUnitPlatform {
 		includeTags 'api'
 	}
@@ -250,11 +262,8 @@ task apiTest(type: Test) {
 		setFailOnNoMatchingTests(false)
 	}
 
-	// Configure TestContainers for Multipass Docker
-	environment 'DOCKER_HOST', 'tcp://192.168.64.8:2376'
-	environment 'TESTCONTAINERS_RYUK_DISABLED', 'true'
-	environment 'TESTCONTAINERS_CHECKS_DISABLE', 'true'
-	environment 'DOCKER_API_VERSION', '1.44'
+	// API tests use @WebMvcTest — web layer only, no real database and no Testcontainers.
+	// No DOCKER_HOST or Testcontainers environment variables are needed here.
 
 	// Generate JaCoCo execution data (report generated separately)
 	jacoco {

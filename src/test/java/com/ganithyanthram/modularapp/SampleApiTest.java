@@ -1,71 +1,72 @@
 package com.ganithyanthram.modularapp;
 
-import com.ganithyanthram.modularapp.config.DockerEnvironmentDetector;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.test.web.servlet.MockMvc;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Sample API Test
- * 
+ *
  * API tests should:
- * - Test application context loading
- * - Test with PostgreSQL TestContainer
+ * - Test the web layer in isolation using @WebMvcTest (not @SpringBootTest)
+ * - Mock service dependencies with @MockitoBean (Spring Boot 4.x)
+ * - Use MockMvc to make HTTP requests and assert responses
+ * - NOT use a real database, Testcontainers, or PostgreSQLContainer
  * - Be tagged with @Tag("api")
  * - Follow naming convention: *ApiTest.java
+ *
+ * Example with a real controller:
+ * <pre>
+ * {@code
+ * @WebMvcTest(controllers = SampleController.class)
+ * class SampleControllerApiTest {
+ *
+ *     @Autowired
+ *     private MockMvc mockMvc;
+ *
+ *     @MockitoBean
+ *     private SampleService sampleService;
+ *
+ *     @Test
+ *     void shouldReturnOkForValidRequest() throws Exception {
+ *         when(sampleService.getData()).thenReturn("data");
+ *         mockMvc.perform(get("/sample"))
+ *                .andExpect(status().isOk())
+ *                .andExpect(content().string("data"));
+ *     }
+ * }
+ * }
+ * </pre>
  */
-@SpringBootTest
-@Testcontainers
+@WebMvcTest
 @ActiveProfiles("test")
 @Tag("api")
 @DisplayName("Sample API Tests")
 class SampleApiTest {
 
-    static {
-        // Configure TestContainers BEFORE container initialization
-        DockerEnvironmentDetector.configureForMultipass();
-    }
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17-alpine")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
-
-    @DynamicPropertySource
-    static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-        registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
-        registry.add("spring.jooq.sql-dialect", () -> "POSTGRES");
-    }
+    @Autowired
+    private MockMvc mockMvc;
 
     @Test
-    @DisplayName("Should load Spring context with PostgreSQL database")
-    void shouldLoadSpringContextWithPostgreSQLDatabase() {
+    @DisplayName("Should load web layer context")
+    void shouldLoadWebLayerContext() {
         // Given & When & Then
-        assertTrue(postgres.isRunning(), "PostgreSQL container should be running");
-        assertNotNull(postgres.getJdbcUrl(), "Database URL should be available");
+        // @WebMvcTest loads only the web layer — no database, no Testcontainers required.
+        assertNotNull(mockMvc, "MockMvc should be available in the web layer context");
     }
 
     @Test
     @DisplayName("Should demonstrate API test structure")
     void shouldDemonstrateApiTestStructure() {
-        // Given - Setup test data and prepare request
-        // When - Execute API calls or business logic
-        // Then - Assert the results
-        
-        assertTrue(postgres.isRunning(), "PostgreSQL should be available for API tests");
+        // Given - Setup test data and mock service responses (using @MockitoBean fields)
+        // When  - Execute HTTP request via MockMvc: mockMvc.perform(get("/endpoint"))
+        // Then  - Assert HTTP response: .andExpect(status().isOk())
+        assertNotNull(mockMvc, "MockMvc is ready to test controller endpoints");
     }
 }

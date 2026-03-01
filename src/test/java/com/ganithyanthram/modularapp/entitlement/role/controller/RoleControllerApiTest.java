@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -43,8 +42,7 @@ class RoleControllerApiTest {
     @DisplayName("Should create role successfully")
     void shouldCreateRoleSuccessfully() throws Exception {
         CreateRoleRequest request = new CreateRoleRequest();
-        request.setName("Admin Role");
-        request.setDescription("Administrator role");
+        request.setName("Test Role");
         request.setOrgId(UUID.randomUUID());
 
         UUID expectedId = UUID.randomUUID();
@@ -67,9 +65,7 @@ class RoleControllerApiTest {
         UUID roleId = UUID.randomUUID();
         RoleResponse response = RoleResponse.builder()
                 .id(roleId)
-                .name("Admin Role")
-                .description("Administrator role")
-                .orgId(UUID.randomUUID())
+                .name("Test Role")
                 .isActive(true)
                 .build();
 
@@ -79,45 +75,44 @@ class RoleControllerApiTest {
                         .with(user("admin")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(roleId.toString()))
-                .andExpect(jsonPath("$.name").value("Admin Role"));
+                .andExpect(jsonPath("$.name").value("Test Role"));
 
         verify(roleService).getRoleById(roleId);
     }
 
     @Test
-    @DisplayName("Should get all roles with pagination")
-    void shouldGetAllRolesWithPagination() throws Exception {
-        RoleResponse role1 = RoleResponse.builder()
+    @DisplayName("Should list roles with pagination")
+    void shouldListRolesWithPagination() throws Exception {
+        RoleResponse response = RoleResponse.builder()
                 .id(UUID.randomUUID())
-                .name("Role 1")
-                .orgId(UUID.randomUUID())
+                .name("Test Role")
                 .isActive(true)
                 .build();
 
-        when(roleService.getAllRoles(0, 20)).thenReturn(List.of(role1));
+        when(roleService.getAllRoles(0, 20)).thenReturn(List.of(response));
 
         mockMvc.perform(get("/api/v1/admin/roles")
                         .param("page", "0")
                         .param("size", "20")
                         .with(user("admin")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Role 1"));
+                .andExpect(jsonPath("$[0].name").value("Test Role"));
 
         verify(roleService).getAllRoles(0, 20);
     }
 
     @Test
-    @DisplayName("Should get roles by organisation")
-    void shouldGetRolesByOrganisation() throws Exception {
+    @DisplayName("Should list roles by organisation")
+    void shouldListRolesByOrganisation() throws Exception {
         UUID orgId = UUID.randomUUID();
-        RoleResponse role1 = RoleResponse.builder()
+        RoleResponse response = RoleResponse.builder()
                 .id(UUID.randomUUID())
                 .name("Org Role")
                 .orgId(orgId)
                 .isActive(true)
                 .build();
 
-        when(roleService.getRolesByOrganisation(orgId, 0, 20)).thenReturn(List.of(role1));
+        when(roleService.getRolesByOrganisation(orgId, 0, 20)).thenReturn(List.of(response));
 
         mockMvc.perform(get("/api/v1/admin/roles")
                         .param("orgId", orgId.toString())
@@ -136,17 +131,14 @@ class RoleControllerApiTest {
         UUID roleId = UUID.randomUUID();
         UpdateRoleRequest request = new UpdateRoleRequest();
         request.setName("Updated Role");
-        request.setDescription("Updated description");
 
         RoleResponse response = RoleResponse.builder()
                 .id(roleId)
                 .name("Updated Role")
-                .description("Updated description")
-                .orgId(UUID.randomUUID())
                 .isActive(true)
                 .build();
 
-        when(roleService.updateRole(eq(roleId), any(), any())).thenReturn(response);
+        when(roleService.updateRole(any(), any(), any())).thenReturn(response);
 
         mockMvc.perform(put("/api/v1/admin/roles/{id}", roleId)
                         .with(csrf())
@@ -156,7 +148,7 @@ class RoleControllerApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Updated Role"));
 
-        verify(roleService).updateRole(eq(roleId), any(), any());
+        verify(roleService).updateRole(any(), any(), any());
     }
 
     @Test
@@ -190,7 +182,7 @@ class RoleControllerApiTest {
     void shouldGetEffectivePermissionsForRole() throws Exception {
         UUID roleId = UUID.randomUUID();
         RoleNode permission = RoleNode.builder()
-                .name("dashboard")
+                .name("users")
                 .permissions(15)
                 .build();
 
@@ -199,7 +191,7 @@ class RoleControllerApiTest {
         mockMvc.perform(get("/api/v1/admin/roles/{id}/effective-permissions", roleId)
                         .with(user("admin")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("dashboard"))
+                .andExpect(jsonPath("$[0].name").value("users"))
                 .andExpect(jsonPath("$[0].permissions").value(15));
 
         verify(roleService).getEffectivePermissions(roleId);

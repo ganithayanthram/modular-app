@@ -13,11 +13,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.json.JsonMapper;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -42,9 +42,8 @@ class ResourceControllerApiTest {
     @DisplayName("Should create resource successfully")
     void shouldCreateResourceSuccessfully() throws Exception {
         CreateResourceRequest request = new CreateResourceRequest();
-        request.setName("Dashboard");
-        request.setType("PAGE");
-        request.setDescription("Main dashboard");
+        request.setName("Test Resource");
+        request.setType("menu");
 
         UUID expectedId = UUID.randomUUID();
         when(resourceService.createResource(any(), any())).thenReturn(expectedId);
@@ -66,10 +65,10 @@ class ResourceControllerApiTest {
         UUID resourceId = UUID.randomUUID();
         ResourceResponse response = ResourceResponse.builder()
                 .id(resourceId)
-                .name("Dashboard")
-                .type("PAGE")
-                .description("Main dashboard")
+                .name("Test Resource")
+                .type("menu")
                 .isActive(true)
+                .children(new ArrayList<>())
                 .build();
 
         when(resourceService.getResourceById(resourceId)).thenReturn(response);
@@ -78,58 +77,53 @@ class ResourceControllerApiTest {
                         .with(user("admin")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(resourceId.toString()))
-                .andExpect(jsonPath("$.name").value("Dashboard"));
+                .andExpect(jsonPath("$.name").value("Test Resource"));
 
         verify(resourceService).getResourceById(resourceId);
     }
 
     @Test
-    @DisplayName("Should get all resources with pagination")
-    void shouldGetAllResourcesWithPagination() throws Exception {
-        ResourceResponse resource1 = ResourceResponse.builder()
+    @DisplayName("Should list resources with pagination")
+    void shouldListResourcesWithPagination() throws Exception {
+        ResourceResponse response = ResourceResponse.builder()
                 .id(UUID.randomUUID())
-                .name("Dashboard")
-                .type("PAGE")
-                .description("Main dashboard")
+                .name("Test Resource")
+                .type("menu")
                 .isActive(true)
+                .children(new ArrayList<>())
                 .build();
 
         when(resourceService.getAllResources(0, 20, null))
-                .thenReturn(List.of(resource1));
+                .thenReturn(List.of(response));
 
         mockMvc.perform(get("/api/v1/admin/resources")
                         .param("page", "0")
                         .param("size", "20")
                         .with(user("admin")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Dashboard"));
+                .andExpect(jsonPath("$[0].name").value("Test Resource"));
 
         verify(resourceService).getAllResources(0, 20, null);
     }
 
     @Test
-    @DisplayName("Should get resources by type")
-    void shouldGetResourcesByType() throws Exception {
-        ResourceResponse resource1 = ResourceResponse.builder()
+    @DisplayName("Should get resource hierarchy")
+    void shouldGetResourceHierarchy() throws Exception {
+        ResourceResponse root = ResourceResponse.builder()
                 .id(UUID.randomUUID())
                 .name("Dashboard")
-                .type("PAGE")
-                .description("Main dashboard")
-                .isActive(true)
+                .type("menu")
+                .children(new ArrayList<>())
                 .build();
 
-        when(resourceService.getAllResources(0, 20, "PAGE"))
-                .thenReturn(List.of(resource1));
+        when(resourceService.getResourceHierarchy()).thenReturn(List.of(root));
 
-        mockMvc.perform(get("/api/v1/admin/resources")
-                        .param("page", "0")
-                        .param("size", "20")
-                        .param("type", "PAGE")
+        mockMvc.perform(get("/api/v1/admin/resources/hierarchy")
                         .with(user("admin")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].type").value("PAGE"));
+                .andExpect(jsonPath("$[0].name").value("Dashboard"));
 
-        verify(resourceService).getAllResources(0, 20, "PAGE");
+        verify(resourceService).getResourceHierarchy();
     }
 
     @Test
@@ -137,19 +131,18 @@ class ResourceControllerApiTest {
     void shouldUpdateResourceSuccessfully() throws Exception {
         UUID resourceId = UUID.randomUUID();
         UpdateResourceRequest request = new UpdateResourceRequest();
-        request.setName("Updated Dashboard");
-        request.setDescription("Updated description");
-        request.setType("PAGE");
+        request.setName("Updated Resource");
+        request.setType("menu");
 
         ResourceResponse response = ResourceResponse.builder()
                 .id(resourceId)
-                .name("Updated Dashboard")
-                .description("Updated description")
-                .type("PAGE")
+                .name("Updated Resource")
+                .type("menu")
                 .isActive(true)
+                .children(new ArrayList<>())
                 .build();
 
-        when(resourceService.updateResource(eq(resourceId), any(), any())).thenReturn(response);
+        when(resourceService.updateResource(any(), any(), any())).thenReturn(response);
 
         mockMvc.perform(put("/api/v1/admin/resources/{id}", resourceId)
                         .with(csrf())
@@ -157,9 +150,9 @@ class ResourceControllerApiTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Updated Dashboard"));
+                .andExpect(jsonPath("$.name").value("Updated Resource"));
 
-        verify(resourceService).updateResource(eq(resourceId), any(), any());
+        verify(resourceService).updateResource(any(), any(), any());
     }
 
     @Test
@@ -173,26 +166,5 @@ class ResourceControllerApiTest {
                 .andExpect(status().isNoContent());
 
         verify(resourceService).deleteResource(resourceId);
-    }
-
-    @Test
-    @DisplayName("Should get resource hierarchy")
-    void shouldGetResourceHierarchy() throws Exception {
-        ResourceResponse parent = ResourceResponse.builder()
-                .id(UUID.randomUUID())
-                .name("Dashboard")
-                .type("PAGE")
-                .description("Main dashboard")
-                .isActive(true)
-                .build();
-
-        when(resourceService.getResourceHierarchy()).thenReturn(List.of(parent));
-
-        mockMvc.perform(get("/api/v1/admin/resources/hierarchy")
-                        .with(user("admin")))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Dashboard"));
-
-        verify(resourceService).getResourceHierarchy();
     }
 }

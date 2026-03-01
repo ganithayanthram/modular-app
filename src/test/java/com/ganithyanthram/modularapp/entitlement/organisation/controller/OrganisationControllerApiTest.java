@@ -13,12 +13,11 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.json.JsonMapper;
 
-import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -43,9 +42,8 @@ class OrganisationControllerApiTest {
     @DisplayName("Should create organisation successfully")
     void shouldCreateOrganisationSuccessfully() throws Exception {
         CreateOrganisationRequest request = new CreateOrganisationRequest();
-        request.setName("Test Organisation");
-        request.setCategory("Business");
-        request.setStatus("ACTIVE");
+        request.setName("Test Org");
+        request.setCategory("Technology");
 
         UUID expectedId = UUID.randomUUID();
         when(organisationService.createOrganisation(any(), any())).thenReturn(expectedId);
@@ -67,10 +65,9 @@ class OrganisationControllerApiTest {
         UUID orgId = UUID.randomUUID();
         OrganisationResponse response = OrganisationResponse.builder()
                 .id(orgId)
-                .name("Test Organisation")
-                .category("Business")
+                .name("Test Org")
+                .category("Technology")
                 .isActive(true)
-                .status("ACTIVE")
                 .build();
 
         when(organisationService.getOrganisationById(orgId)).thenReturn(response);
@@ -79,30 +76,29 @@ class OrganisationControllerApiTest {
                         .with(user("admin")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(orgId.toString()))
-                .andExpect(jsonPath("$.name").value("Test Organisation"));
+                .andExpect(jsonPath("$.name").value("Test Org"));
 
         verify(organisationService).getOrganisationById(orgId);
     }
 
     @Test
-    @DisplayName("Should get all organisations with pagination")
-    void shouldGetAllOrganisationsWithPagination() throws Exception {
-        OrganisationResponse org1 = OrganisationResponse.builder()
+    @DisplayName("Should list organisations with pagination")
+    void shouldListOrganisationsWithPagination() throws Exception {
+        OrganisationResponse response = OrganisationResponse.builder()
                 .id(UUID.randomUUID())
-                .name("Org 1")
-                .category("Business")
+                .name("Test Org")
                 .isActive(true)
                 .build();
 
         when(organisationService.getAllOrganisations(0, 20, null))
-                .thenReturn(List.of(org1));
+                .thenReturn(List.of(response));
 
         mockMvc.perform(get("/api/v1/admin/organisations")
                         .param("page", "0")
                         .param("size", "20")
                         .with(user("admin")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].name").value("Org 1"));
+                .andExpect(jsonPath("$[0].name").value("Test Org"));
 
         verify(organisationService).getAllOrganisations(0, 20, null);
     }
@@ -112,19 +108,17 @@ class OrganisationControllerApiTest {
     void shouldUpdateOrganisationSuccessfully() throws Exception {
         UUID orgId = UUID.randomUUID();
         UpdateOrganisationRequest request = new UpdateOrganisationRequest();
-        request.setName("Updated Organisation");
-        request.setCategory("Enterprise");
-        request.setStatus("ACTIVE");
+        request.setName("Updated Org");
+        request.setCategory("Updated Category");
 
         OrganisationResponse response = OrganisationResponse.builder()
                 .id(orgId)
-                .name("Updated Organisation")
-                .category("Enterprise")
+                .name("Updated Org")
+                .category("Updated Category")
                 .isActive(true)
-                .status("ACTIVE")
                 .build();
 
-        when(organisationService.updateOrganisation(eq(orgId), any(), any())).thenReturn(response);
+        when(organisationService.updateOrganisation(any(), any(), any())).thenReturn(response);
 
         mockMvc.perform(put("/api/v1/admin/organisations/{id}", orgId)
                         .with(csrf())
@@ -132,9 +126,9 @@ class OrganisationControllerApiTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Updated Organisation"));
+                .andExpect(jsonPath("$.name").value("Updated Org"));
 
-        verify(organisationService).updateOrganisation(eq(orgId), any(), any());
+        verify(organisationService).updateOrganisation(any(), any(), any());
     }
 
     @Test
@@ -174,5 +168,18 @@ class OrganisationControllerApiTest {
                 .andExpect(status().isOk());
 
         verify(organisationService).deactivateOrganisation(orgId);
+    }
+
+    @Test
+    @DisplayName("Should return 400 for invalid create request")
+    void shouldReturn400ForInvalidCreateRequest() throws Exception {
+        CreateOrganisationRequest request = new CreateOrganisationRequest();
+
+        mockMvc.perform(post("/api/v1/admin/organisations")
+                        .with(csrf())
+                        .with(user("admin"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 }

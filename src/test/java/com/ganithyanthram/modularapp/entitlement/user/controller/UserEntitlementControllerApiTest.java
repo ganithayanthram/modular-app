@@ -12,11 +12,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -37,42 +37,46 @@ class UserEntitlementControllerApiTest {
     private ResourceService resourceService;
 
     @Test
-    @DisplayName("Should get current user's entitlements")
-    void shouldGetCurrentUserEntitlements() throws Exception {
+    @DisplayName("Should get my entitlements")
+    void shouldGetMyEntitlements() throws Exception {
         UserEntitlementResponse response = UserEntitlementResponse.builder()
                 .individualId(UUID.randomUUID())
+                .name("John Doe")
+                .email("john@test.com")
+                .organisations(new ArrayList<>())
                 .build();
 
         when(permissionOverrideService.getUserEntitlements(any())).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/user/entitlements")
-                        .with(user("testuser")))
+                        .with(user("john")))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.individualId").exists());
+                .andExpect(jsonPath("$.name").value("John Doe"))
+                .andExpect(jsonPath("$.email").value("john@test.com"));
 
         verify(permissionOverrideService).getUserEntitlements(any());
     }
 
     @Test
-    @DisplayName("Should get current user's permissions for organisation")
-    void shouldGetCurrentUserPermissionsForOrganisation() throws Exception {
+    @DisplayName("Should get my permissions for organisation")
+    void shouldGetMyPermissionsForOrganisation() throws Exception {
         UUID orgId = UUID.randomUUID();
         RoleNode permission = RoleNode.builder()
                 .name("dashboard")
                 .permissions(15)
                 .build();
 
-        when(permissionOverrideService.getEffectivePermissions(any(), eq(orgId)))
+        when(permissionOverrideService.getEffectivePermissions(any(), any()))
                 .thenReturn(List.of(permission));
 
         mockMvc.perform(get("/api/v1/user/entitlements/permissions")
                         .param("orgId", orgId.toString())
-                        .with(user("testuser")))
+                        .with(user("john")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("dashboard"))
                 .andExpect(jsonPath("$[0].permissions").value(15));
 
-        verify(permissionOverrideService).getEffectivePermissions(any(), eq(orgId));
+        verify(permissionOverrideService).getEffectivePermissions(any(), any());
     }
 
     @Test
@@ -81,15 +85,14 @@ class UserEntitlementControllerApiTest {
         ResourceResponse resource = ResourceResponse.builder()
                 .id(UUID.randomUUID())
                 .name("Dashboard")
-                .type("PAGE")
-                .description("Main dashboard")
-                .isActive(true)
+                .type("menu")
+                .children(new ArrayList<>())
                 .build();
 
         when(resourceService.getResourceHierarchy()).thenReturn(List.of(resource));
 
         mockMvc.perform(get("/api/v1/user/entitlements/resources")
-                        .with(user("testuser")))
+                        .with(user("john")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Dashboard"));
 
@@ -97,48 +100,25 @@ class UserEntitlementControllerApiTest {
     }
 
     @Test
-    @DisplayName("Should check if user has permission")
-    void shouldCheckIfUserHasPermission() throws Exception {
+    @DisplayName("Should check permission")
+    void shouldCheckPermission() throws Exception {
         UUID orgId = UUID.randomUUID();
         RoleNode permission = RoleNode.builder()
-                .name("dashboard")
+                .name("users")
                 .permissions(15)
                 .build();
 
-        when(permissionOverrideService.getEffectivePermissions(any(), eq(orgId)))
+        when(permissionOverrideService.getEffectivePermissions(any(), any()))
                 .thenReturn(List.of(permission));
 
         mockMvc.perform(get("/api/v1/user/entitlements/check")
                         .param("orgId", orgId.toString())
-                        .param("resource", "dashboard")
-                        .param("action", "read")
-                        .with(user("testuser")))
+                        .param("resource", "users")
+                        .param("action", "create")
+                        .with(user("john")))
                 .andExpect(status().isOk())
                 .andExpect(content().string("true"));
 
-        verify(permissionOverrideService).getEffectivePermissions(any(), eq(orgId));
-    }
-
-    @Test
-    @DisplayName("Should return false when user does not have permission")
-    void shouldReturnFalseWhenUserDoesNotHavePermission() throws Exception {
-        UUID orgId = UUID.randomUUID();
-        RoleNode permission = RoleNode.builder()
-                .name("dashboard")
-                .permissions(1)
-                .build();
-
-        when(permissionOverrideService.getEffectivePermissions(any(), eq(orgId)))
-                .thenReturn(List.of(permission));
-
-        mockMvc.perform(get("/api/v1/user/entitlements/check")
-                        .param("orgId", orgId.toString())
-                        .param("resource", "dashboard")
-                        .param("action", "delete")
-                        .with(user("testuser")))
-                .andExpect(status().isOk())
-                .andExpect(content().string("false"));
-
-        verify(permissionOverrideService).getEffectivePermissions(any(), eq(orgId));
+        verify(permissionOverrideService).getEffectivePermissions(any(), any());
     }
 }

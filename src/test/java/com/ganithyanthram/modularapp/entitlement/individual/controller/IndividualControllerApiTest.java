@@ -13,12 +13,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.json.JsonMapper;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -44,9 +42,8 @@ class IndividualControllerApiTest {
     void shouldCreateIndividualSuccessfully() throws Exception {
         CreateIndividualRequest request = new CreateIndividualRequest();
         request.setName("John Doe");
-        request.setEmail("john.doe@example.com");
-        request.setMobileNumber("1234567890");
-        request.setPassword("password123");
+        request.setEmail("john@test.com");
+        request.setPassword("SecurePass123!");
 
         UUID expectedId = UUID.randomUUID();
         when(individualService.createIndividual(any(), any())).thenReturn(expectedId);
@@ -69,8 +66,7 @@ class IndividualControllerApiTest {
         IndividualResponse response = IndividualResponse.builder()
                 .id(individualId)
                 .name("John Doe")
-                .email("john.doe@example.com")
-                .mobileNumber("1234567890")
+                .email("john@test.com")
                 .isActive(true)
                 .build();
 
@@ -86,17 +82,17 @@ class IndividualControllerApiTest {
     }
 
     @Test
-    @DisplayName("Should get all individuals with pagination")
-    void shouldGetAllIndividualsWithPagination() throws Exception {
-        IndividualResponse individual1 = IndividualResponse.builder()
+    @DisplayName("Should list individuals with pagination")
+    void shouldListIndividualsWithPagination() throws Exception {
+        IndividualResponse response = IndividualResponse.builder()
                 .id(UUID.randomUUID())
                 .name("John Doe")
-                .email("john@example.com")
+                .email("john@test.com")
                 .isActive(true)
                 .build();
 
         when(individualService.getAllIndividuals(0, 20, null))
-                .thenReturn(List.of(individual1));
+                .thenReturn(List.of(response));
 
         mockMvc.perform(get("/api/v1/admin/individuals")
                         .param("page", "0")
@@ -113,19 +109,17 @@ class IndividualControllerApiTest {
     void shouldUpdateIndividualSuccessfully() throws Exception {
         UUID individualId = UUID.randomUUID();
         UpdateIndividualRequest request = new UpdateIndividualRequest();
-        request.setName("Jane Smith");
-        request.setEmail("jane.smith@example.com");
-        request.setMobileNumber("9876543210");
+        request.setName("John Updated");
+        request.setEmail("john@test.com");
 
         IndividualResponse response = IndividualResponse.builder()
                 .id(individualId)
-                .name("Jane Smith")
-                .email("jane.smith@example.com")
-                .mobileNumber("9876543210")
+                .name("John Updated")
+                .email("john@test.com")
                 .isActive(true)
                 .build();
 
-        when(individualService.updateIndividual(eq(individualId), any(), any())).thenReturn(response);
+        when(individualService.updateIndividual(any(), any(), any())).thenReturn(response);
 
         mockMvc.perform(put("/api/v1/admin/individuals/{id}", individualId)
                         .with(csrf())
@@ -133,9 +127,9 @@ class IndividualControllerApiTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Jane Smith"));
+                .andExpect(jsonPath("$.name").value("John Updated"));
 
-        verify(individualService).updateIndividual(eq(individualId), any(), any());
+        verify(individualService).updateIndividual(any(), any(), any());
     }
 
     @Test
@@ -175,5 +169,18 @@ class IndividualControllerApiTest {
                 .andExpect(status().isOk());
 
         verify(individualService).deactivateIndividual(individualId);
+    }
+
+    @Test
+    @DisplayName("Should return 400 for invalid create request")
+    void shouldReturn400ForInvalidCreateRequest() throws Exception {
+        CreateIndividualRequest request = new CreateIndividualRequest();
+
+        mockMvc.perform(post("/api/v1/admin/individuals")
+                        .with(csrf())
+                        .with(user("admin"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
     }
 }

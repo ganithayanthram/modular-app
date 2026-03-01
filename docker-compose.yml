@@ -1,0 +1,43 @@
+volumes:
+  # Removed modularapp_db_data to ensure fresh database on each startup
+  modularapp_minio_data:
+
+networks:
+  modularapp-net:
+
+services:
+  modularapp-db:
+    image: postgres:17-alpine   # ✅ Using Alpine version
+    environment:
+      POSTGRES_USER: modularapp
+      POSTGRES_PASSWORD: modularapp
+      POSTGRES_DB: modularapp
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U modularapp"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+    restart: on-failure
+    stdin_open: true
+    tty: true
+    networks:
+      - modularapp-net
+#minio 
+  minio:
+    image: minio/minio:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    restart: always
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - modularapp_minio_data:/data
+    stdin_open: true
+    tty: true
+    networks:
+      - modularapp-net

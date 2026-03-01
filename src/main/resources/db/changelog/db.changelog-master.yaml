@@ -1,0 +1,5 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/db.changelog-202602281600-create-shedlock.xml
+  - include:
+      file: db/changelog/db.changelog-202602281700-create-sample-tables.xml

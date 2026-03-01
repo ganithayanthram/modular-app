@@ -1,0 +1,356 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.0.3'
+	id 'io.spring.dependency-management' version '1.1.7'
+	id 'nu.studer.jooq' version '9.0'
+	id 'jacoco'
+}
+
+group = 'com.ganithyanthram'
+version = '0.0.1-SNAPSHOT'
+description = 'Modular application using Spring Boot'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+ext {
+	set('springModulithVersion', "2.0.3")
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-jooq'
+	implementation 'org.springframework.boot:spring-boot-starter-liquibase'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'org.springframework.modulith:spring-modulith-starter-core'
+	compileOnly 'org.projectlombok:lombok'
+	runtimeOnly 'org.postgresql:postgresql'
+	annotationProcessor 'org.projectlombok:lombok'
+	
+	// Test dependencies
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-jooq-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-liquibase-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testImplementation 'org.springframework.modulith:spring-modulith-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	
+	// Let Spring Boot manage JUnit versions to avoid conflicts
+	
+	// Mockito for unit testing
+	testImplementation 'org.mockito:mockito-core:5.7.0'
+	testImplementation 'org.mockito:mockito-junit-jupiter:5.7.0'
+	
+	// H2 in-memory database for tests (no Docker required)
+	testRuntimeOnly 'com.h2database:h2'
+	
+	// JOOQ code generation dependencies
+	jooqGenerator 'org.postgresql:postgresql'
+}
+
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.modulith:spring-modulith-bom:${springModulithVersion}"
+	}
+}
+
+// Force all JOOQ dependencies to use the same version
+configurations.all {
+	resolutionStrategy {
+		force 'org.jooq:jooq:3.19.30'
+		force 'org.jooq:jooq-meta:3.19.30'
+		force 'org.jooq:jooq-codegen:3.19.30'
+	}
+}
+
+// Custom task for easier JOOQ generation
+task jooqGen {
+	dependsOn += 'generateJooq'
+}
+
+jooq {
+	version = '3.19.30'  // Use Spring Boot 4.0.3's actual JOOQ version
+	edition = nu.studer.gradle.jooq.JooqEdition.OSS
+	
+	configurations {
+		main {
+			generateSchemaSourceOnCompilation = false  // Don't generate on every build
+			generationTool {
+				jdbc {
+					driver = 'org.postgresql.Driver'
+					url = 'jdbc:postgresql://192.168.64.8:5432/modularapp'
+					user = 'modularapp'
+					password = 'modularapp'
+					properties {
+						property {
+							key = 'useSSL'
+							value = 'false'
+						}
+					}
+				}
+				generator {
+					name = 'org.jooq.codegen.DefaultGenerator'
+					database {
+						name = 'org.jooq.meta.postgres.PostgresDatabase'
+						inputSchema = 'public'
+						outputSchemaToDefault = true
+						excludes = 'DATABASECHANGELOG|DATABASECHANGELOGLOCK|SHEDLOCK'
+					}
+					generate {
+						relations = false
+						deprecated = false
+						records = true
+						pojos = true
+						daos = true
+						springAnnotations = true
+						javaTimeTypes = true
+						fluentSetters = true
+						pojosEqualsAndHashCode = true
+					}
+					target {
+						packageName = 'com.ganithyanthram.modularapp.db.jooq'
+						directory = 'src/generated-db-entities/java/'
+					}
+				}
+			}
+		}
+	}
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+	reports {
+		junitXml.required.set(true)
+		html.required.set(true)
+	}
+	// Handle case when no tests are found
+	filter {
+		setFailOnNoMatchingTests(false)
+	}
+	
+	// Clean test environment - no special Docker configuration needed
+}
+
+tasks.withType(Test) {
+	testLogging.showStandardStreams = true
+	afterTest { desc, result ->
+		println "Executing test ${desc.name} [${desc.className}] with result: ${result.resultType}"
+	}
+	testLogging {
+		events "passed", "skipped", "failed"
+	}
+	
+	// Clean test environment - no special Docker configuration needed
+}
+
+// ========================================
+// OPTIMIZED TEST TASKS CONFIGURATION
+// ========================================
+
+task unitTest(type: Test) {
+	description = 'Runs unit tests only (tagged with @Tag("unit"))'
+	group = 'verification'
+
+	useJUnitPlatform {
+		includeTags 'unit'
+	}
+	maxParallelForks = Runtime.runtime.availableProcessors()
+	include '**/*UTest.class'
+	failFast = true
+	filter {
+		setFailOnNoMatchingTests(false)
+	}
+
+	// Generate JaCoCo execution data (report generated separately)
+	jacoco {
+		destinationFile = layout.buildDirectory.file("jacoco/unitTest.exec").get().asFile
+	}
+
+	doLast {
+		println "✅ Unit tests completed. Run './gradlew jacocoTestReport' to generate coverage report."
+	}
+}
+
+task integrationTest(type: Test) {
+	description = 'Runs integration tests only (tagged with @Tag("integration"))'
+	group = 'verification'
+
+	useJUnitPlatform {
+		includeTags 'integration'
+	}
+	include '**/*ITest.class'
+	failFast = true
+	filter {
+		setFailOnNoMatchingTests(false)
+	}
+
+	// Generate JaCoCo execution data (report generated separately)
+	jacoco {
+		destinationFile = layout.buildDirectory.file("jacoco/integrationTest.exec").get().asFile
+	}
+
+	doLast {
+		println "✅ Integration tests completed. Run './gradlew jacocoTestReport' to generate coverage report."
+	}
+}
+
+task apiTest(type: Test) {
+	description = 'Runs API tests only (tagged with @Tag("api"))'
+	group = 'verification'
+
+	useJUnitPlatform {
+		includeTags 'api'
+	}
+	include '**/*ApiTest.class'
+	failFast = true
+	filter {
+		setFailOnNoMatchingTests(false)
+	}
+
+	// Generate JaCoCo execution data (report generated separately)
+	jacoco {
+		destinationFile = layout.buildDirectory.file("jacoco/apiTest.exec").get().asFile
+	}
+
+	doLast {
+		println "✅ API tests completed. Run './gradlew jacocoTestReport' to generate coverage report."
+	}
+}
+
+// ========================================
+// COMBINED TEST TASKS WITH COVERAGE
+// ========================================
+
+task unitTestsWithCoverage {
+	description = 'Runs unit tests and generates coverage report'
+	group = 'verification'
+
+	dependsOn unitTest
+	finalizedBy jacocoTestReport
+
+	doLast {
+		println "✅ Unit tests with coverage completed. Report: build/reports/jacoco/test/index.html"
+	}
+}
+
+task integrationTestsWithCoverage {
+	description = 'Runs integration tests and generates coverage report'
+	group = 'verification'
+
+	dependsOn integrationTest
+	finalizedBy jacocoTestReport
+
+	doLast {
+		println "✅ Integration tests with coverage completed. Report: build/reports/jacoco/test/index.html"
+	}
+}
+
+task apiTestsWithCoverage {
+	description = 'Runs API tests and generates coverage report'
+	group = 'verification'
+
+	dependsOn apiTest
+	finalizedBy jacocoTestReport
+
+	doLast {
+		println "✅ API tests with coverage completed. Report: build/reports/jacoco/test/index.html"
+	}
+}
+
+task allTestsWithCoverage {
+	description = 'Runs all tests (unit, integration, API) and generates combined coverage report'
+	group = 'verification'
+
+	dependsOn unitTest, integrationTest, apiTest
+	finalizedBy jacocoTestReport
+
+	doLast {
+		println "✅ All tests with coverage completed. Report: build/reports/jacoco/test/index.html"
+	}
+}
+
+// ========================================
+// OPTIMIZED JACOCO CONFIGURATION
+// ========================================
+
+jacocoTestReport {
+	description = 'Generates JaCoCo coverage report from all test execution data'
+	group = 'verification'
+
+	// Aggregate coverage from all test execution files
+	executionData.setFrom(fileTree(dir: layout.buildDirectory.dir("jacoco"), include: "**/*.exec"))
+
+	reports {
+		html.required.set(true)
+		xml.required.set(true)
+		csv.required.set(false)
+	}
+
+	classDirectories.setFrom(files(sourceSets.main.output))
+	afterEvaluate {
+		classDirectories.setFrom(files(classDirectories.files.collect {
+			fileTree(dir: it, exclude: [
+				'com/ganithyanthram/modularapp/db/jooq/**',  // Exclude JOOQ generated code
+				'**/*Config.class',                          // Exclude configuration classes
+				'**/*Configuration.class',                   // Exclude configuration classes
+				'**/*DTO.class',                             // Exclude DTO classes
+				'**/*Dto.class',                             // Exclude Dto classes
+				'**/dto/**/*.class'                          // Exclude all classes in dto packages
+			])
+		}))
+	}
+
+	// Ensure proper task ordering
+	mustRunAfter compileJava, processResources, test, unitTest, integrationTest, apiTest
+
+	// Handle case where no tests exist - don't fail the build
+	onlyIf {
+		// Always generate report, even if empty, for compatibility
+		true
+	}
+
+	doFirst {
+		// Create execution data directory if it doesn't exist
+		def jacocoDir = layout.buildDirectory.dir("jacoco").get().asFile
+		if (!jacocoDir.exists()) {
+			jacocoDir.mkdirs()
+		}
+
+		// Log information about test execution data
+		def execFiles = fileTree(dir: jacocoDir, include: "**/*.exec")
+		if (execFiles.isEmpty()) {
+			logger.info("No JaCoCo execution data found - generating empty coverage report")
+		} else {
+			logger.info("Found JaCoCo execution data: ${execFiles.files}")
+		}
+	}
+
+	doLast {
+		println "📊 JaCoCo coverage report generated:"
+		println "   HTML: build/reports/jacoco/test/index.html"
+		println "   XML:  build/reports/jacoco/test/jacocoTestReport.xml"
+	}
+}
+
+// Treat the generated sources as a separate source set so that Pull Requests are not confusing
+sourceSets {
+	main {
+		java {
+			srcDirs 'src/generated-db-entities/java'
+		}
+	}
+}

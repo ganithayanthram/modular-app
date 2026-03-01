@@ -4,6 +4,17 @@
 package com.ganithyanthram.modularapp.db.jooq;
 
 
+import com.ganithyanthram.modularapp.db.jooq.tables.Individual;
+import com.ganithyanthram.modularapp.db.jooq.tables.IndividualPasswordResetAudit;
+import com.ganithyanthram.modularapp.db.jooq.tables.IndividualPermission;
+import com.ganithyanthram.modularapp.db.jooq.tables.IndividualRole;
+import com.ganithyanthram.modularapp.db.jooq.tables.IndividualSessions;
+import com.ganithyanthram.modularapp.db.jooq.tables.IndividualVerificationAudit;
+import com.ganithyanthram.modularapp.db.jooq.tables.ListNames;
+import com.ganithyanthram.modularapp.db.jooq.tables.ListValues;
+import com.ganithyanthram.modularapp.db.jooq.tables.Organisation;
+import com.ganithyanthram.modularapp.db.jooq.tables.Resource;
+import com.ganithyanthram.modularapp.db.jooq.tables.Roles;
 import com.ganithyanthram.modularapp.db.jooq.tables.UserProfiles;
 import com.ganithyanthram.modularapp.db.jooq.tables.Users;
 
@@ -13,6 +24,61 @@ import com.ganithyanthram.modularapp.db.jooq.tables.Users;
  */
 @SuppressWarnings({ "all", "unchecked", "rawtypes", "this-escape" })
 public class Tables {
+
+    /**
+     * The table <code>individual</code>.
+     */
+    public static final Individual INDIVIDUAL = Individual.INDIVIDUAL;
+
+    /**
+     * The table <code>individual_password_reset_audit</code>.
+     */
+    public static final IndividualPasswordResetAudit INDIVIDUAL_PASSWORD_RESET_AUDIT = IndividualPasswordResetAudit.INDIVIDUAL_PASSWORD_RESET_AUDIT;
+
+    /**
+     * The table <code>individual_permission</code>.
+     */
+    public static final IndividualPermission INDIVIDUAL_PERMISSION = IndividualPermission.INDIVIDUAL_PERMISSION;
+
+    /**
+     * The table <code>individual_role</code>.
+     */
+    public static final IndividualRole INDIVIDUAL_ROLE = IndividualRole.INDIVIDUAL_ROLE;
+
+    /**
+     * The table <code>individual_sessions</code>.
+     */
+    public static final IndividualSessions INDIVIDUAL_SESSIONS = IndividualSessions.INDIVIDUAL_SESSIONS;
+
+    /**
+     * The table <code>individual_verification_audit</code>.
+     */
+    public static final IndividualVerificationAudit INDIVIDUAL_VERIFICATION_AUDIT = IndividualVerificationAudit.INDIVIDUAL_VERIFICATION_AUDIT;
+
+    /**
+     * The table <code>list_names</code>.
+     */
+    public static final ListNames LIST_NAMES = ListNames.LIST_NAMES;
+
+    /**
+     * The table <code>list_values</code>.
+     */
+    public static final ListValues LIST_VALUES = ListValues.LIST_VALUES;
+
+    /**
+     * The table <code>organisation</code>.
+     */
+    public static final Organisation ORGANISATION = Organisation.ORGANISATION;
+
+    /**
+     * The table <code>resource</code>.
+     */
+    public static final Resource RESOURCE = Resource.RESOURCE;
+
+    /**
+     * The table <code>roles</code>.
+     */
+    public static final Roles ROLES = Roles.ROLES;
 
     /**
      * The table <code>user_profiles</code>.

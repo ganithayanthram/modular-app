@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="1.0-create-core-tables" author="entitlement-module">
+        <sql dbms="postgresql" splitStatements="true" stripComments="true">
+            <![CDATA[
+            -- Organisation table
+            CREATE TABLE IF NOT EXISTS public.organisation (
+                id UUID NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                category VARCHAR(100) NOT NULL,
+                meta_data JSONB NULL,
+                is_active BOOLEAN NULL DEFAULT true,
+                status VARCHAR(50) NULL,
+                created_by UUID NULL,
+                updated_by UUID NULL,
+                created_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT organisation_pkey PRIMARY KEY (id)
+            );
+
+            -- Individual table
+            CREATE TABLE IF NOT EXISTS public.individual (
+                id UUID NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                email VARCHAR(100) NULL,
+                mobile_number VARCHAR(100) NULL,
+                password VARCHAR(100) NULL,
+                social_login_provider VARCHAR(50) NULL,
+                social_login_provider_id VARCHAR(255) NULL,
+                social_login_provider_image_url VARCHAR(255) NULL,
+                meta_data JSONB NULL,
+                is_active BOOLEAN NULL DEFAULT true,
+                created_by UUID NULL,
+                updated_by UUID NULL,
+                created_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT individual_email_unique UNIQUE (email),
+                CONSTRAINT individual_pkey PRIMARY KEY (id)
+            );
+
+            -- Roles table
+            CREATE TABLE IF NOT EXISTS public.roles (
+                id UUID NOT NULL,
+                name VARCHAR(100) NOT NULL,
+                description VARCHAR(255) NULL,
+                parent_role_id UUID NULL,
+                is_active BOOLEAN NULL DEFAULT true,
+                created_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                created_by UUID NULL,
+                updated_by UUID NULL,
+                permissions JSONB NULL,
+                org_id UUID NULL,
+                pages JSONB NULL,
+                CONSTRAINT roles_id_pk PRIMARY KEY (id),
+                CONSTRAINT roles_parent_role_fk FOREIGN KEY (parent_role_id) REFERENCES public.roles(id)
+            );
+
+            -- Resource table
+            CREATE TABLE IF NOT EXISTS public.resource (
+                id UUID NOT NULL,
+                name VARCHAR(100) NOT NULL,
+                description VARCHAR(255) NULL,
+                type VARCHAR(50) NOT NULL,
+                parent_resource_id UUID NULL,
+                validations JSONB NULL,
+                is_active BOOLEAN NOT NULL DEFAULT true,
+                created_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                created_by UUID NULL,
+                updated_by UUID NULL,
+                CONSTRAINT resource_id_pk PRIMARY KEY (id),
+                CONSTRAINT resource_parent_resource_fk FOREIGN KEY (parent_resource_id) REFERENCES public.resource(id)
+            );
+
+            -- Individual Role (junction table)
+            CREATE TABLE IF NOT EXISTS public.individual_role (
+                id UUID NOT NULL,
+                individual_id UUID NOT NULL,
+                role_id UUID NOT NULL,
+                created_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_on TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                created_by UUID NULL,
+                updated_by UUID NULL,
+                org_id UUID NULL,
+                CONSTRAINT individual_role_id_pk PRIMARY KEY (id),
+                CONSTRAINT individual_role_individual_id_fk FOREIGN KEY (individual_id) REFERENCES public.individual(id),
+                CONSTRAINT individual_role_role_id_fk FOREIGN KEY (role_id) REFERENCES public.roles(id)
+            );
+
+            -- Individual Permission (overrides)
+            CREATE TABLE IF NOT EXISTS public.individual_permission (
+                id UUID NOT NULL,
+                individual_id UUID NOT NULL,
+                permissions JSONB NOT NULL,
+                created_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_by UUID NULL,
+                updated_on TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_by UUID NULL,
+                remarks VARCHAR(512) NULL,
+                org_id UUID NULL,
+                pages JSONB NULL,
+                CONSTRAINT individual_permission_pk PRIMARY KEY (id),
+                CONSTRAINT individual_permission_individual_fk FOREIGN KEY (individual_id) REFERENCES public.individual(id)
+            );
+            ]]>
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

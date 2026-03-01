@@ -4,6 +4,17 @@
 package com.ganithyanthram.modularapp.db.jooq;
 
 
+import com.ganithyanthram.modularapp.db.jooq.tables.Individual;
+import com.ganithyanthram.modularapp.db.jooq.tables.IndividualPasswordResetAudit;
+import com.ganithyanthram.modularapp.db.jooq.tables.IndividualPermission;
+import com.ganithyanthram.modularapp.db.jooq.tables.IndividualRole;
+import com.ganithyanthram.modularapp.db.jooq.tables.IndividualSessions;
+import com.ganithyanthram.modularapp.db.jooq.tables.IndividualVerificationAudit;
+import com.ganithyanthram.modularapp.db.jooq.tables.ListNames;
+import com.ganithyanthram.modularapp.db.jooq.tables.ListValues;
+import com.ganithyanthram.modularapp.db.jooq.tables.Organisation;
+import com.ganithyanthram.modularapp.db.jooq.tables.Resource;
+import com.ganithyanthram.modularapp.db.jooq.tables.Roles;
 import com.ganithyanthram.modularapp.db.jooq.tables.UserProfiles;
 import com.ganithyanthram.modularapp.db.jooq.tables.Users;
 
@@ -23,7 +34,28 @@ public class Indexes {
     // INDEX definitions
     // -------------------------------------------------------------------------
 
+    public static final Index IDX_INDIVIDUAL_EMAIL = Internal.createIndex(DSL.name("idx_individual_email"), Individual.INDIVIDUAL, new OrderField[] { Individual.INDIVIDUAL.EMAIL }, false);
+    public static final Index IDX_INDIVIDUAL_IS_ACTIVE = Internal.createIndex(DSL.name("idx_individual_is_active"), Individual.INDIVIDUAL, new OrderField[] { Individual.INDIVIDUAL.IS_ACTIVE }, false);
+    public static final Index IDX_INDIVIDUAL_PERMISSION_INDIVIDUAL_ID = Internal.createIndex(DSL.name("idx_individual_permission_individual_id"), IndividualPermission.INDIVIDUAL_PERMISSION, new OrderField[] { IndividualPermission.INDIVIDUAL_PERMISSION.INDIVIDUAL_ID }, false);
+    public static final Index IDX_INDIVIDUAL_PERMISSION_ORG_ID = Internal.createIndex(DSL.name("idx_individual_permission_org_id"), IndividualPermission.INDIVIDUAL_PERMISSION, new OrderField[] { IndividualPermission.INDIVIDUAL_PERMISSION.ORG_ID }, false);
+    public static final Index IDX_INDIVIDUAL_ROLE_INDIVIDUAL_ID = Internal.createIndex(DSL.name("idx_individual_role_individual_id"), IndividualRole.INDIVIDUAL_ROLE, new OrderField[] { IndividualRole.INDIVIDUAL_ROLE.INDIVIDUAL_ID }, false);
+    public static final Index IDX_INDIVIDUAL_ROLE_ORG_ID = Internal.createIndex(DSL.name("idx_individual_role_org_id"), IndividualRole.INDIVIDUAL_ROLE, new OrderField[] { IndividualRole.INDIVIDUAL_ROLE.ORG_ID }, false);
+    public static final Index IDX_INDIVIDUAL_ROLE_ROLE_ID = Internal.createIndex(DSL.name("idx_individual_role_role_id"), IndividualRole.INDIVIDUAL_ROLE, new OrderField[] { IndividualRole.INDIVIDUAL_ROLE.ROLE_ID }, false);
+    public static final Index IDX_LIST_NAMES_NAME = Internal.createIndex(DSL.name("idx_list_names_name"), ListNames.LIST_NAMES, new OrderField[] { ListNames.LIST_NAMES.NAME }, false);
+    public static final Index IDX_LIST_VALUES_LIST_NAMES_ID = Internal.createIndex(DSL.name("idx_list_values_list_names_id"), ListValues.LIST_VALUES, new OrderField[] { ListValues.LIST_VALUES.LIST_NAMES_ID }, false);
+    public static final Index IDX_ORGANISATION_IS_ACTIVE = Internal.createIndex(DSL.name("idx_organisation_is_active"), Organisation.ORGANISATION, new OrderField[] { Organisation.ORGANISATION.IS_ACTIVE }, false);
+    public static final Index IDX_ORGANISATION_NAME = Internal.createIndex(DSL.name("idx_organisation_name"), Organisation.ORGANISATION, new OrderField[] { Organisation.ORGANISATION.NAME }, false);
+    public static final Index IDX_PASSWORD_RESET_INDIVIDUAL_ID = Internal.createIndex(DSL.name("idx_password_reset_individual_id"), IndividualPasswordResetAudit.INDIVIDUAL_PASSWORD_RESET_AUDIT, new OrderField[] { IndividualPasswordResetAudit.INDIVIDUAL_PASSWORD_RESET_AUDIT.INDIVIDUAL_ID }, false);
+    public static final Index IDX_PASSWORD_RESET_STATUS = Internal.createIndex(DSL.name("idx_password_reset_status"), IndividualPasswordResetAudit.INDIVIDUAL_PASSWORD_RESET_AUDIT, new OrderField[] { IndividualPasswordResetAudit.INDIVIDUAL_PASSWORD_RESET_AUDIT.RESET_STATUS }, false);
+    public static final Index IDX_RESOURCE_PARENT_ID = Internal.createIndex(DSL.name("idx_resource_parent_id"), Resource.RESOURCE, new OrderField[] { Resource.RESOURCE.PARENT_RESOURCE_ID }, false);
+    public static final Index IDX_RESOURCE_TYPE = Internal.createIndex(DSL.name("idx_resource_type"), Resource.RESOURCE, new OrderField[] { Resource.RESOURCE.TYPE }, false);
+    public static final Index IDX_ROLES_ORG_ID = Internal.createIndex(DSL.name("idx_roles_org_id"), Roles.ROLES, new OrderField[] { Roles.ROLES.ORG_ID }, false);
+    public static final Index IDX_ROLES_PARENT_ROLE_ID = Internal.createIndex(DSL.name("idx_roles_parent_role_id"), Roles.ROLES, new OrderField[] { Roles.ROLES.PARENT_ROLE_ID }, false);
+    public static final Index IDX_SESSIONS_ACCESSTOKEN = Internal.createIndex(DSL.name("idx_sessions_accesstoken"), IndividualSessions.INDIVIDUAL_SESSIONS, new OrderField[] { IndividualSessions.INDIVIDUAL_SESSIONS.ACCESSTOKEN }, false);
+    public static final Index IDX_SESSIONS_INDIVIDUAL_ID = Internal.createIndex(DSL.name("idx_sessions_individual_id"), IndividualSessions.INDIVIDUAL_SESSIONS, new OrderField[] { IndividualSessions.INDIVIDUAL_SESSIONS.INDIVIDUAL_ID }, false);
     public static final Index IDX_USER_PROFILES_USER_ID = Internal.createIndex(DSL.name("idx_user_profiles_user_id"), UserProfiles.USER_PROFILES, new OrderField[] { UserProfiles.USER_PROFILES.USER_ID }, false);
     public static final Index IDX_USERS_EMAIL = Internal.createIndex(DSL.name("idx_users_email"), Users.USERS, new OrderField[] { Users.USERS.EMAIL }, false);
     public static final Index IDX_USERS_USERNAME = Internal.createIndex(DSL.name("idx_users_username"), Users.USERS, new OrderField[] { Users.USERS.USERNAME }, false);
+    public static final Index IDX_VERIFICATION_CONTACT_VALUE = Internal.createIndex(DSL.name("idx_verification_contact_value"), IndividualVerificationAudit.INDIVIDUAL_VERIFICATION_AUDIT, new OrderField[] { IndividualVerificationAudit.INDIVIDUAL_VERIFICATION_AUDIT.CONTACT_VALUE }, false);
+    public static final Index IDX_VERIFICATION_STATUS = Internal.createIndex(DSL.name("idx_verification_status"), IndividualVerificationAudit.INDIVIDUAL_VERIFICATION_AUDIT, new OrderField[] { IndividualVerificationAudit.INDIVIDUAL_VERIFICATION_AUDIT.VERIFICATION_STATUS }, false);
 }

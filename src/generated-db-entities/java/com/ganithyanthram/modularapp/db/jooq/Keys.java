@@ -4,8 +4,30 @@
 package com.ganithyanthram.modularapp.db.jooq;
 
 
+import com.ganithyanthram.modularapp.db.jooq.tables.Individual;
+import com.ganithyanthram.modularapp.db.jooq.tables.IndividualPasswordResetAudit;
+import com.ganithyanthram.modularapp.db.jooq.tables.IndividualPermission;
+import com.ganithyanthram.modularapp.db.jooq.tables.IndividualRole;
+import com.ganithyanthram.modularapp.db.jooq.tables.IndividualSessions;
+import com.ganithyanthram.modularapp.db.jooq.tables.IndividualVerificationAudit;
+import com.ganithyanthram.modularapp.db.jooq.tables.ListNames;
+import com.ganithyanthram.modularapp.db.jooq.tables.ListValues;
+import com.ganithyanthram.modularapp.db.jooq.tables.Organisation;
+import com.ganithyanthram.modularapp.db.jooq.tables.Resource;
+import com.ganithyanthram.modularapp.db.jooq.tables.Roles;
 import com.ganithyanthram.modularapp.db.jooq.tables.UserProfiles;
 import com.ganithyanthram.modularapp.db.jooq.tables.Users;
+import com.ganithyanthram.modularapp.db.jooq.tables.records.IndividualPasswordResetAuditRecord;
+import com.ganithyanthram.modularapp.db.jooq.tables.records.IndividualPermissionRecord;
+import com.ganithyanthram.modularapp.db.jooq.tables.records.IndividualRecord;
+import com.ganithyanthram.modularapp.db.jooq.tables.records.IndividualRoleRecord;
+import com.ganithyanthram.modularapp.db.jooq.tables.records.IndividualSessionsRecord;
+import com.ganithyanthram.modularapp.db.jooq.tables.records.IndividualVerificationAuditRecord;
+import com.ganithyanthram.modularapp.db.jooq.tables.records.ListNamesRecord;
+import com.ganithyanthram.modularapp.db.jooq.tables.records.ListValuesRecord;
+import com.ganithyanthram.modularapp.db.jooq.tables.records.OrganisationRecord;
+import com.ganithyanthram.modularapp.db.jooq.tables.records.ResourceRecord;
+import com.ganithyanthram.modularapp.db.jooq.tables.records.RolesRecord;
 import com.ganithyanthram.modularapp.db.jooq.tables.records.UserProfilesRecord;
 import com.ganithyanthram.modularapp.db.jooq.tables.records.UsersRecord;
 
@@ -27,6 +49,19 @@ public class Keys {
     // UNIQUE and PRIMARY KEY definitions
     // -------------------------------------------------------------------------
 
+    public static final UniqueKey<IndividualRecord> INDIVIDUAL_EMAIL_UNIQUE = Internal.createUniqueKey(Individual.INDIVIDUAL, DSL.name("individual_email_unique"), new TableField[] { Individual.INDIVIDUAL.EMAIL }, true);
+    public static final UniqueKey<IndividualRecord> INDIVIDUAL_PKEY = Internal.createUniqueKey(Individual.INDIVIDUAL, DSL.name("individual_pkey"), new TableField[] { Individual.INDIVIDUAL.ID }, true);
+    public static final UniqueKey<IndividualPasswordResetAuditRecord> INDIVIDUAL_PASSWORD_RESET_AUDIT_PKEY = Internal.createUniqueKey(IndividualPasswordResetAudit.INDIVIDUAL_PASSWORD_RESET_AUDIT, DSL.name("individual_password_reset_audit_pkey"), new TableField[] { IndividualPasswordResetAudit.INDIVIDUAL_PASSWORD_RESET_AUDIT.ID }, true);
+    public static final UniqueKey<IndividualPermissionRecord> INDIVIDUAL_PERMISSION_PK = Internal.createUniqueKey(IndividualPermission.INDIVIDUAL_PERMISSION, DSL.name("individual_permission_pk"), new TableField[] { IndividualPermission.INDIVIDUAL_PERMISSION.ID }, true);
+    public static final UniqueKey<IndividualRoleRecord> INDIVIDUAL_ROLE_ID_PK = Internal.createUniqueKey(IndividualRole.INDIVIDUAL_ROLE, DSL.name("individual_role_id_pk"), new TableField[] { IndividualRole.INDIVIDUAL_ROLE.ID }, true);
+    public static final UniqueKey<IndividualSessionsRecord> INDIVIDUAL_SESSIONS_PKEY = Internal.createUniqueKey(IndividualSessions.INDIVIDUAL_SESSIONS, DSL.name("individual_sessions_pkey"), new TableField[] { IndividualSessions.INDIVIDUAL_SESSIONS.ID }, true);
+    public static final UniqueKey<IndividualVerificationAuditRecord> INDIVIDUAL_VERIFICATION_AUDIT_PKEY = Internal.createUniqueKey(IndividualVerificationAudit.INDIVIDUAL_VERIFICATION_AUDIT, DSL.name("individual_verification_audit_pkey"), new TableField[] { IndividualVerificationAudit.INDIVIDUAL_VERIFICATION_AUDIT.ID }, true);
+    public static final UniqueKey<ListNamesRecord> LIST_NAMES_NAME_KEY = Internal.createUniqueKey(ListNames.LIST_NAMES, DSL.name("list_names_name_key"), new TableField[] { ListNames.LIST_NAMES.NAME }, true);
+    public static final UniqueKey<ListNamesRecord> LIST_NAMES_PKEY = Internal.createUniqueKey(ListNames.LIST_NAMES, DSL.name("list_names_pkey"), new TableField[] { ListNames.LIST_NAMES.ID }, true);
+    public static final UniqueKey<ListValuesRecord> LIST_VALUES_PKEY = Internal.createUniqueKey(ListValues.LIST_VALUES, DSL.name("list_values_pkey"), new TableField[] { ListValues.LIST_VALUES.ID }, true);
+    public static final UniqueKey<OrganisationRecord> ORGANISATION_PKEY = Internal.createUniqueKey(Organisation.ORGANISATION, DSL.name("organisation_pkey"), new TableField[] { Organisation.ORGANISATION.ID }, true);
+    public static final UniqueKey<ResourceRecord> RESOURCE_ID_PK = Internal.createUniqueKey(Resource.RESOURCE, DSL.name("resource_id_pk"), new TableField[] { Resource.RESOURCE.ID }, true);
+    public static final UniqueKey<RolesRecord> ROLES_ID_PK = Internal.createUniqueKey(Roles.ROLES, DSL.name("roles_id_pk"), new TableField[] { Roles.ROLES.ID }, true);
     public static final UniqueKey<UserProfilesRecord> USER_PROFILES_PKEY = Internal.createUniqueKey(UserProfiles.USER_PROFILES, DSL.name("user_profiles_pkey"), new TableField[] { UserProfiles.USER_PROFILES.ID }, true);
     public static final UniqueKey<UsersRecord> USERS_EMAIL_KEY = Internal.createUniqueKey(Users.USERS, DSL.name("users_email_key"), new TableField[] { Users.USERS.EMAIL }, true);
     public static final UniqueKey<UsersRecord> USERS_PKEY = Internal.createUniqueKey(Users.USERS, DSL.name("users_pkey"), new TableField[] { Users.USERS.ID }, true);
@@ -36,5 +71,13 @@ public class Keys {
     // FOREIGN KEY definitions
     // -------------------------------------------------------------------------
 
+    public static final ForeignKey<IndividualPasswordResetAuditRecord, IndividualRecord> INDIVIDUAL_PASSWORD_RESET_AUDIT__INDIVIDUAL_PASSWORD_RESET_AUDIT_INDIVIDUAL_ID_FKEY = Internal.createForeignKey(IndividualPasswordResetAudit.INDIVIDUAL_PASSWORD_RESET_AUDIT, DSL.name("individual_password_reset_audit_individual_id_fkey"), new TableField[] { IndividualPasswordResetAudit.INDIVIDUAL_PASSWORD_RESET_AUDIT.INDIVIDUAL_ID }, Keys.INDIVIDUAL_PKEY, new TableField[] { Individual.INDIVIDUAL.ID }, true);
+    public static final ForeignKey<IndividualPermissionRecord, IndividualRecord> INDIVIDUAL_PERMISSION__INDIVIDUAL_PERMISSION_INDIVIDUAL_FK = Internal.createForeignKey(IndividualPermission.INDIVIDUAL_PERMISSION, DSL.name("individual_permission_individual_fk"), new TableField[] { IndividualPermission.INDIVIDUAL_PERMISSION.INDIVIDUAL_ID }, Keys.INDIVIDUAL_PKEY, new TableField[] { Individual.INDIVIDUAL.ID }, true);
+    public static final ForeignKey<IndividualRoleRecord, IndividualRecord> INDIVIDUAL_ROLE__INDIVIDUAL_ROLE_INDIVIDUAL_ID_FK = Internal.createForeignKey(IndividualRole.INDIVIDUAL_ROLE, DSL.name("individual_role_individual_id_fk"), new TableField[] { IndividualRole.INDIVIDUAL_ROLE.INDIVIDUAL_ID }, Keys.INDIVIDUAL_PKEY, new TableField[] { Individual.INDIVIDUAL.ID }, true);
+    public static final ForeignKey<IndividualRoleRecord, RolesRecord> INDIVIDUAL_ROLE__INDIVIDUAL_ROLE_ROLE_ID_FK = Internal.createForeignKey(IndividualRole.INDIVIDUAL_ROLE, DSL.name("individual_role_role_id_fk"), new TableField[] { IndividualRole.INDIVIDUAL_ROLE.ROLE_ID }, Keys.ROLES_ID_PK, new TableField[] { Roles.ROLES.ID }, true);
+    public static final ForeignKey<IndividualSessionsRecord, IndividualRecord> INDIVIDUAL_SESSIONS__INDIVIDUAL_SESSIONS_IND_FK = Internal.createForeignKey(IndividualSessions.INDIVIDUAL_SESSIONS, DSL.name("individual_sessions_ind_fk"), new TableField[] { IndividualSessions.INDIVIDUAL_SESSIONS.INDIVIDUAL_ID }, Keys.INDIVIDUAL_PKEY, new TableField[] { Individual.INDIVIDUAL.ID }, true);
+    public static final ForeignKey<ListValuesRecord, ListNamesRecord> LIST_VALUES__FK_LIST_NAMES = Internal.createForeignKey(ListValues.LIST_VALUES, DSL.name("fk_list_names"), new TableField[] { ListValues.LIST_VALUES.LIST_NAMES_ID }, Keys.LIST_NAMES_PKEY, new TableField[] { ListNames.LIST_NAMES.ID }, true);
+    public static final ForeignKey<ResourceRecord, ResourceRecord> RESOURCE__RESOURCE_PARENT_RESOURCE_FK = Internal.createForeignKey(Resource.RESOURCE, DSL.name("resource_parent_resource_fk"), new TableField[] { Resource.RESOURCE.PARENT_RESOURCE_ID }, Keys.RESOURCE_ID_PK, new TableField[] { Resource.RESOURCE.ID }, true);
+    public static final ForeignKey<RolesRecord, RolesRecord> ROLES__ROLES_PARENT_ROLE_FK = Internal.createForeignKey(Roles.ROLES, DSL.name("roles_parent_role_fk"), new TableField[] { Roles.ROLES.PARENT_ROLE_ID }, Keys.ROLES_ID_PK, new TableField[] { Roles.ROLES.ID }, true);
     public static final ForeignKey<UserProfilesRecord, UsersRecord> USER_PROFILES__FK_USER_PROFILES_USER_ID = Internal.createForeignKey(UserProfiles.USER_PROFILES, DSL.name("fk_user_profiles_user_id"), new TableField[] { UserProfiles.USER_PROFILES.USER_ID }, Keys.USERS_PKEY, new TableField[] { Users.USERS.ID }, true);
 }

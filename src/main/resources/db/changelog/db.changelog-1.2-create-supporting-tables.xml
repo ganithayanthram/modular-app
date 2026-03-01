@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="1.2-create-supporting-tables" author="entitlement-module">
+        <sql dbms="postgresql" splitStatements="true" stripComments="true">
+            <![CDATA[
+            -- List Names table (master)
+            CREATE TABLE IF NOT EXISTS public.list_names (
+                id UUID NOT NULL,
+                name VARCHAR(100) NULL,
+                is_active BOOLEAN NULL DEFAULT true,
+                created_by UUID NULL,
+                updated_by UUID NULL,
+                created_on TIMESTAMP NOT NULL,
+                updated_on TIMESTAMP NOT NULL,
+                is_statistics BOOLEAN NULL,
+                CONSTRAINT list_names_pkey PRIMARY KEY (id),
+                CONSTRAINT list_names_name_key UNIQUE (name)
+            );
+
+            -- List Values table (detail)
+            CREATE TABLE IF NOT EXISTS public.list_values (
+                id UUID NOT NULL,
+                name VARCHAR(255) NULL,
+                list_names_id UUID NOT NULL,
+                is_active BOOLEAN NULL DEFAULT true,
+                created_by UUID NULL,
+                updated_by UUID NULL,
+                created_on TIMESTAMP NOT NULL,
+                updated_on TIMESTAMP NOT NULL,
+                code VARCHAR(50) NULL,
+                CONSTRAINT list_values_pkey PRIMARY KEY (id),
+                CONSTRAINT fk_list_names FOREIGN KEY (list_names_id) REFERENCES public.list_names(id)
+            );
+            ]]>
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

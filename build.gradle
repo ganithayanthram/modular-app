@@ -35,7 +35,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-liquibase'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.modulith:spring-modulith-starter-core'
+	implementation 'com.fasterxml.jackson.core:jackson-databind'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'org.postgresql:postgresql'
 	annotationProcessor 'org.projectlombok:lombok'
@@ -116,6 +118,23 @@ jooq {
 						inputSchema = 'public'
 						outputSchemaToDefault = true
 						excludes = 'DATABASECHANGELOG|DATABASECHANGELOGLOCK|SHEDLOCK'
+						
+						forcedTypes {
+							// RoleNode list converter for permissions columns
+							forcedType {
+								userType = 'java.util.List<com.ganithyanthram.modularapp.entitlement.common.dto.RoleNode>'
+								includeExpression = '.*\\.permissions|.*\\.pages'
+								includeTypes = 'JSONB'
+								converter = 'com.ganithyanthram.modularapp.entitlement.common.converter.RoleNodeListConverter'
+							}
+							// Generic JSONB converter for metadata, validations, documents
+							forcedType {
+								userType = 'java.util.Map<String, Object>'
+								includeExpression = '.*\\.meta_data|.*\\.validations'
+								includeTypes = 'JSONB'
+								converter = 'com.ganithyanthram.modularapp.entitlement.common.converter.JsonbConverter'
+							}
+						}
 					}
 					generate {
 						relations = false

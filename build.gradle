@@ -55,8 +55,15 @@ dependencies {
 	testImplementation 'org.mockito:mockito-core:5.7.0'
 	testImplementation 'org.mockito:mockito-junit-jupiter:5.7.0'
 	
-	// H2 in-memory database for tests (no Docker required)
+	// H2 in-memory database for tests (fallback when Docker unavailable)
 	testRuntimeOnly 'com.h2database:h2'
+	
+	// TestContainers for PostgreSQL integration testing
+	// Using latest version with better Docker API compatibility
+	testImplementation platform('org.testcontainers:testcontainers-bom:1.21.0')
+	testImplementation 'org.testcontainers:testcontainers'
+	testImplementation 'org.testcontainers:postgresql'
+	testImplementation 'org.testcontainers:junit-jupiter'
 	
 	// JOOQ code generation dependencies
 	jooqGenerator 'org.postgresql:postgresql'
@@ -141,8 +148,16 @@ tasks.named('test') {
 	filter {
 		setFailOnNoMatchingTests(false)
 	}
-	
-	// Clean test environment - no special Docker configuration needed
+
+	// 'gradle build' runs this task and includes ALL tests (unit + integration + API).
+	// Integration and API tests use Testcontainers, which needs to reach the Docker daemon
+	// inside the Multipass VM.  The DockerEnvironmentDetector reflection approach is blocked
+	// by the Java 17+ module system, so we set the variables here at the process level
+	// where they are guaranteed to be visible to System.getenv() inside the test JVM.
+	environment 'DOCKER_HOST', 'tcp://192.168.64.8:2376'
+	environment 'TESTCONTAINERS_RYUK_DISABLED', 'true'
+	environment 'TESTCONTAINERS_CHECKS_DISABLE', 'true'
+	environment 'DOCKER_API_VERSION', '1.44'
 }
 
 tasks.withType(Test) {
@@ -189,6 +204,12 @@ task integrationTest(type: Test) {
 	description = 'Runs integration tests only (tagged with @Tag("integration"))'
 	group = 'verification'
 
+	// Wire up test sources and classpath from the 'test' source set so Gradle
+	// can discover compiled test classes (required for custom Test tasks in Gradle 9+)
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	dependsOn testClasses
+
 	useJUnitPlatform {
 		includeTags 'integration'
 	}
@@ -197,6 +218,14 @@ task integrationTest(type: Test) {
 	filter {
 		setFailOnNoMatchingTests(false)
 	}
+
+	// Configure TestContainers to connect to the Docker daemon running inside
+	// the Multipass VM (docker-vm, IP 192.168.64.8).  The daemon is configured
+	// with TLS disabled and listens on tcp://0.0.0.0:2376.
+	environment 'DOCKER_HOST', 'tcp://192.168.64.8:2376'
+	environment 'TESTCONTAINERS_RYUK_DISABLED', 'true'
+	environment 'TESTCONTAINERS_CHECKS_DISABLE', 'true'
+	environment 'DOCKER_API_VERSION', '1.44'
 
 	// Generate JaCoCo execution data (report generated separately)
 	jacoco {
@@ -220,6 +249,12 @@ task apiTest(type: Test) {
 	filter {
 		setFailOnNoMatchingTests(false)
 	}
+
+	// Configure TestContainers for Multipass Docker
+	environment 'DOCKER_HOST', 'tcp://192.168.64.8:2376'
+	environment 'TESTCONTAINERS_RYUK_DISABLED', 'true'
+	environment 'TESTCONTAINERS_CHECKS_DISABLE', 'true'
+	environment 'DOCKER_API_VERSION', '1.44'
 
 	// Generate JaCoCo execution data (report generated separately)
 	jacoco {

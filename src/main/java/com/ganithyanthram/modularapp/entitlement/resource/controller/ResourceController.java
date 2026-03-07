@@ -4,11 +4,13 @@ import com.ganithyanthram.modularapp.entitlement.resource.dto.request.CreateReso
 import com.ganithyanthram.modularapp.entitlement.resource.dto.request.UpdateResourceRequest;
 import com.ganithyanthram.modularapp.entitlement.resource.dto.response.ResourceResponse;
 import com.ganithyanthram.modularapp.entitlement.resource.service.ResourceService;
+import com.ganithyanthram.modularapp.security.annotation.CurrentUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +24,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/admin/resources")
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class ResourceController {
     
     private final ResourceService resourceService;
@@ -32,9 +35,9 @@ public class ResourceController {
      */
     @PostMapping
     public ResponseEntity<Map<String, UUID>> createResource(
+            @CurrentUser UUID userId,
             @Valid @RequestBody CreateResourceRequest request) {
         
-        UUID userId = UUID.randomUUID(); // TODO: Get from @CurrentUser
         UUID id = resourceService.createResource(request, userId);
         
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -71,10 +74,10 @@ public class ResourceController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<ResourceResponse> updateResource(
+            @CurrentUser UUID userId,
             @PathVariable UUID id,
             @Valid @RequestBody UpdateResourceRequest request) {
         
-        UUID userId = UUID.randomUUID(); // TODO: Get from @CurrentUser
         ResourceResponse response = resourceService.updateResource(id, request, userId);
         
         return ResponseEntity.ok(response);

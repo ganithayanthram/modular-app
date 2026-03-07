@@ -4,11 +4,13 @@ import com.ganithyanthram.modularapp.entitlement.individual.dto.request.CreateIn
 import com.ganithyanthram.modularapp.entitlement.individual.dto.request.UpdateIndividualRequest;
 import com.ganithyanthram.modularapp.entitlement.individual.dto.response.IndividualResponse;
 import com.ganithyanthram.modularapp.entitlement.individual.service.IndividualService;
+import com.ganithyanthram.modularapp.security.annotation.CurrentUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +24,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/admin/individuals")
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class IndividualController {
     
     private final IndividualService individualService;
@@ -32,9 +35,9 @@ public class IndividualController {
      */
     @PostMapping
     public ResponseEntity<Map<String, UUID>> createIndividual(
+            @CurrentUser UUID userId,
             @Valid @RequestBody CreateIndividualRequest request) {
         
-        UUID userId = UUID.randomUUID(); // TODO: Get from @CurrentUser
         UUID id = individualService.createIndividual(request, userId);
         
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -71,10 +74,10 @@ public class IndividualController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<IndividualResponse> updateIndividual(
+            @CurrentUser UUID userId,
             @PathVariable UUID id,
             @Valid @RequestBody UpdateIndividualRequest request) {
         
-        UUID userId = UUID.randomUUID(); // TODO: Get from @CurrentUser
         IndividualResponse response = individualService.updateIndividual(id, request, userId);
         
         return ResponseEntity.ok(response);

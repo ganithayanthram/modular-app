@@ -4,11 +4,13 @@ import com.ganithyanthram.modularapp.entitlement.organisation.dto.request.Create
 import com.ganithyanthram.modularapp.entitlement.organisation.dto.request.UpdateOrganisationRequest;
 import com.ganithyanthram.modularapp.entitlement.organisation.dto.response.OrganisationResponse;
 import com.ganithyanthram.modularapp.entitlement.organisation.service.OrganisationService;
+import com.ganithyanthram.modularapp.security.annotation.CurrentUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +24,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/admin/organisations")
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class OrganisationController {
     
     private final OrganisationService organisationService;
@@ -32,9 +35,9 @@ public class OrganisationController {
      */
     @PostMapping
     public ResponseEntity<Map<String, UUID>> createOrganisation(
+            @CurrentUser UUID userId,
             @Valid @RequestBody CreateOrganisationRequest request) {
         
-        UUID userId = UUID.randomUUID(); // TODO: Get from @CurrentUser
         UUID id = organisationService.createOrganisation(request, userId);
         
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -71,10 +74,10 @@ public class OrganisationController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<OrganisationResponse> updateOrganisation(
+            @CurrentUser UUID userId,
             @PathVariable UUID id,
             @Valid @RequestBody UpdateOrganisationRequest request) {
         
-        UUID userId = UUID.randomUUID(); // TODO: Get from @CurrentUser
         OrganisationResponse response = organisationService.updateOrganisation(id, request, userId);
         
         return ResponseEntity.ok(response);

@@ -7,11 +7,13 @@ import com.ganithyanthram.modularapp.entitlement.assignment.service.RoleAssignme
 import com.ganithyanthram.modularapp.entitlement.common.dto.RoleNode;
 import com.ganithyanthram.modularapp.entitlement.individual.dto.response.IndividualResponse;
 import com.ganithyanthram.modularapp.entitlement.role.dto.response.RoleResponse;
+import com.ganithyanthram.modularapp.security.annotation.CurrentUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,6 +27,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/admin/assignments")
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class EntitlementAssignmentController {
     
     private final RoleAssignmentService roleAssignmentService;
@@ -36,9 +39,9 @@ public class EntitlementAssignmentController {
      */
     @PostMapping("/roles")
     public ResponseEntity<Map<String, UUID>> assignRole(
+            @CurrentUser UUID userId,
             @Valid @RequestBody AssignRoleRequest request) {
         
-        UUID userId = UUID.randomUUID(); // TODO: Get from @CurrentUser
         UUID id = roleAssignmentService.assignRole(request, userId);
         
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -93,9 +96,9 @@ public class EntitlementAssignmentController {
      */
     @PostMapping("/permissions")
     public ResponseEntity<Map<String, UUID>> overridePermissions(
+            @CurrentUser UUID userId,
             @Valid @RequestBody OverridePermissionRequest request) {
         
-        UUID userId = UUID.randomUUID(); // TODO: Get from @CurrentUser
         UUID id = permissionOverrideService.overridePermissions(request, userId);
         
         return ResponseEntity.status(HttpStatus.CREATED)

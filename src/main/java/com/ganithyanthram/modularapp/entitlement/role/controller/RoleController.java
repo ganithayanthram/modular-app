@@ -5,11 +5,13 @@ import com.ganithyanthram.modularapp.entitlement.role.dto.request.CreateRoleRequ
 import com.ganithyanthram.modularapp.entitlement.role.dto.request.UpdateRoleRequest;
 import com.ganithyanthram.modularapp.entitlement.role.dto.response.RoleResponse;
 import com.ganithyanthram.modularapp.entitlement.role.service.RoleService;
+import com.ganithyanthram.modularapp.security.annotation.CurrentUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,6 +25,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/admin/roles")
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class RoleController {
     
     private final RoleService roleService;
@@ -33,9 +36,9 @@ public class RoleController {
      */
     @PostMapping
     public ResponseEntity<Map<String, UUID>> createRole(
+            @CurrentUser UUID userId,
             @Valid @RequestBody CreateRoleRequest request) {
         
-        UUID userId = UUID.randomUUID(); // TODO: Get from @CurrentUser
         UUID id = roleService.createRole(request, userId);
         
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -78,10 +81,10 @@ public class RoleController {
      */
     @PutMapping("/{id}")
     public ResponseEntity<RoleResponse> updateRole(
+            @CurrentUser UUID userId,
             @PathVariable UUID id,
             @Valid @RequestBody UpdateRoleRequest request) {
         
-        UUID userId = UUID.randomUUID(); // TODO: Get from @CurrentUser
         RoleResponse response = roleService.updateRole(id, request, userId);
         
         return ResponseEntity.ok(response);

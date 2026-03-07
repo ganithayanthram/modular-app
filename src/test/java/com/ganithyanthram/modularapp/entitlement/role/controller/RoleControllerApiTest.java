@@ -1,14 +1,19 @@
 package com.ganithyanthram.modularapp.entitlement.role.controller;
 
 import com.ganithyanthram.modularapp.config.ApiTest;
+import com.ganithyanthram.modularapp.config.JwtTestUtil;
+import com.ganithyanthram.modularapp.config.SecurityTestConfig;
 import com.ganithyanthram.modularapp.entitlement.common.dto.RoleNode;
 import com.ganithyanthram.modularapp.entitlement.role.dto.request.CreateRoleRequest;
 import com.ganithyanthram.modularapp.entitlement.role.dto.request.UpdateRoleRequest;
 import com.ganithyanthram.modularapp.entitlement.role.dto.response.RoleResponse;
 import com.ganithyanthram.modularapp.entitlement.role.service.RoleService;
+import com.ganithyanthram.modularapp.security.service.CustomUserDetailsService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -20,12 +25,11 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ApiTest(controllers = RoleController.class)
+@Import(SecurityTestConfig.class)
 @DisplayName("RoleController API Tests")
 class RoleControllerApiTest {
 
@@ -35,8 +39,33 @@ class RoleControllerApiTest {
     @Autowired
     private JsonMapper jsonMapper;
 
+    @Autowired
+    private JwtTestUtil jwtTestUtil;
+
     @MockitoBean
     private RoleService roleService;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
+
+    private String validToken;
+    private UUID testUserId;
+    private UUID testOrgId;
+
+    @BeforeEach
+    void setUp() {
+        testUserId = UUID.randomUUID();
+        testOrgId = UUID.randomUUID();
+        validToken = jwtTestUtil.generateAccessToken(testUserId, testOrgId, "test@example.com");
+        
+        org.springframework.security.core.userdetails.User mockUser = 
+            new org.springframework.security.core.userdetails.User(
+                "test@example.com",
+                "password",
+                java.util.Collections.emptyList()
+            );
+        when(customUserDetailsService.loadUserByUsername("test@example.com")).thenReturn(mockUser);
+    }
 
     @Test
     @DisplayName("Should create role successfully")
@@ -49,8 +78,7 @@ class RoleControllerApiTest {
         when(roleService.createRole(any(), any())).thenReturn(expectedId);
 
         mockMvc.perform(post("/api/v1/admin/roles")
-                        .with(csrf())
-                        .with(user("admin"))
+                        .header("Authorization", "Bearer " + validToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -72,7 +100,7 @@ class RoleControllerApiTest {
         when(roleService.getRoleById(roleId)).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/admin/roles/{id}", roleId)
-                        .with(user("admin")))
+                        .header("Authorization", "Bearer " + validToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(roleId.toString()))
                 .andExpect(jsonPath("$.name").value("Test Role"));
@@ -94,7 +122,7 @@ class RoleControllerApiTest {
         mockMvc.perform(get("/api/v1/admin/roles")
                         .param("page", "0")
                         .param("size", "20")
-                        .with(user("admin")))
+                        .header("Authorization", "Bearer " + validToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Test Role"));
 
@@ -118,7 +146,7 @@ class RoleControllerApiTest {
                         .param("orgId", orgId.toString())
                         .param("page", "0")
                         .param("size", "20")
-                        .with(user("admin")))
+                        .header("Authorization", "Bearer " + validToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Org Role"));
 
@@ -141,8 +169,7 @@ class RoleControllerApiTest {
         when(roleService.updateRole(any(), any(), any())).thenReturn(response);
 
         mockMvc.perform(put("/api/v1/admin/roles/{id}", roleId)
-                        .with(csrf())
-                        .with(user("admin"))
+                        .header("Authorization", "Bearer " + validToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -157,8 +184,7 @@ class RoleControllerApiTest {
         UUID roleId = UUID.randomUUID();
 
         mockMvc.perform(delete("/api/v1/admin/roles/{id}", roleId)
-                        .with(csrf())
-                        .with(user("admin")))
+                        .header("Authorization", "Bearer " + validToken))
                 .andExpect(status().isNoContent());
 
         verify(roleService).deleteRole(roleId);
@@ -170,8 +196,7 @@ class RoleControllerApiTest {
         UUID roleId = UUID.randomUUID();
 
         mockMvc.perform(patch("/api/v1/admin/roles/{id}/activate", roleId)
-                        .with(csrf())
-                        .with(user("admin")))
+                        .header("Authorization", "Bearer " + validToken))
                 .andExpect(status().isOk());
 
         verify(roleService).activateRole(roleId);
@@ -189,7 +214,7 @@ class RoleControllerApiTest {
         when(roleService.getEffectivePermissions(roleId)).thenReturn(List.of(permission));
 
         mockMvc.perform(get("/api/v1/admin/roles/{id}/effective-permissions", roleId)
-                        .with(user("admin")))
+                        .header("Authorization", "Bearer " + validToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("users"))
                 .andExpect(jsonPath("$[0].permissions").value(15));

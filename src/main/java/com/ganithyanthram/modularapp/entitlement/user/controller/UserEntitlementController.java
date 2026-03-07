@@ -5,9 +5,11 @@ import com.ganithyanthram.modularapp.entitlement.assignment.service.PermissionOv
 import com.ganithyanthram.modularapp.entitlement.common.dto.RoleNode;
 import com.ganithyanthram.modularapp.entitlement.resource.dto.response.ResourceResponse;
 import com.ganithyanthram.modularapp.entitlement.resource.service.ResourceService;
+import com.ganithyanthram.modularapp.security.annotation.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +22,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/user/entitlements")
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class UserEntitlementController {
     
     private final PermissionOverrideService permissionOverrideService;
@@ -30,9 +33,7 @@ public class UserEntitlementController {
      * GET /api/v1/user/entitlements
      */
     @GetMapping
-    public ResponseEntity<UserEntitlementResponse> getMyEntitlements() {
-        UUID currentUserId = UUID.randomUUID(); // TODO: Get from @CurrentUser
-        
+    public ResponseEntity<UserEntitlementResponse> getMyEntitlements(@CurrentUser UUID currentUserId) {
         UserEntitlementResponse response = permissionOverrideService.getUserEntitlements(currentUserId);
         return ResponseEntity.ok(response);
     }
@@ -42,8 +43,9 @@ public class UserEntitlementController {
      * GET /api/v1/user/entitlements/permissions
      */
     @GetMapping("/permissions")
-    public ResponseEntity<List<RoleNode>> getMyPermissions(@RequestParam UUID orgId) {
-        UUID currentUserId = UUID.randomUUID(); // TODO: Get from @CurrentUser
+    public ResponseEntity<List<RoleNode>> getMyPermissions(
+            @CurrentUser UUID currentUserId,
+            @RequestParam UUID orgId) {
         
         List<RoleNode> permissions = permissionOverrideService.getEffectivePermissions(currentUserId, orgId);
         return ResponseEntity.ok(permissions);
@@ -65,11 +67,10 @@ public class UserEntitlementController {
      */
     @GetMapping("/check")
     public ResponseEntity<Boolean> checkPermission(
+            @CurrentUser UUID currentUserId,
             @RequestParam UUID orgId,
             @RequestParam String resource,
             @RequestParam String action) {
-        
-        UUID currentUserId = UUID.randomUUID(); // TODO: Get from @CurrentUser
         
         List<RoleNode> permissions = permissionOverrideService.getEffectivePermissions(currentUserId, orgId);
         boolean hasPermission = hasPermission(permissions, resource, action);

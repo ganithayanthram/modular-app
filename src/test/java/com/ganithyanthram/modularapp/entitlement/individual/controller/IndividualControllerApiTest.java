@@ -1,13 +1,18 @@
 package com.ganithyanthram.modularapp.entitlement.individual.controller;
 
 import com.ganithyanthram.modularapp.config.ApiTest;
+import com.ganithyanthram.modularapp.config.JwtTestUtil;
+import com.ganithyanthram.modularapp.config.SecurityTestConfig;
 import com.ganithyanthram.modularapp.entitlement.individual.dto.request.CreateIndividualRequest;
 import com.ganithyanthram.modularapp.entitlement.individual.dto.request.UpdateIndividualRequest;
 import com.ganithyanthram.modularapp.entitlement.individual.dto.response.IndividualResponse;
 import com.ganithyanthram.modularapp.entitlement.individual.service.IndividualService;
+import com.ganithyanthram.modularapp.security.service.CustomUserDetailsService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -19,12 +24,11 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ApiTest(controllers = IndividualController.class)
+@Import(SecurityTestConfig.class)
 @DisplayName("IndividualController API Tests")
 class IndividualControllerApiTest {
 
@@ -34,8 +38,33 @@ class IndividualControllerApiTest {
     @Autowired
     private JsonMapper jsonMapper;
 
+    @Autowired
+    private JwtTestUtil jwtTestUtil;
+
     @MockitoBean
     private IndividualService individualService;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
+
+    private String validToken;
+    private UUID testUserId;
+    private UUID testOrgId;
+
+    @BeforeEach
+    void setUp() {
+        testUserId = UUID.randomUUID();
+        testOrgId = UUID.randomUUID();
+        validToken = jwtTestUtil.generateAccessToken(testUserId, testOrgId, "test@example.com");
+        
+        org.springframework.security.core.userdetails.User mockUser = 
+            new org.springframework.security.core.userdetails.User(
+                "test@example.com",
+                "password",
+                java.util.Collections.emptyList()
+            );
+        when(customUserDetailsService.loadUserByUsername("test@example.com")).thenReturn(mockUser);
+    }
 
     @Test
     @DisplayName("Should create individual successfully")
@@ -49,8 +78,7 @@ class IndividualControllerApiTest {
         when(individualService.createIndividual(any(), any())).thenReturn(expectedId);
 
         mockMvc.perform(post("/api/v1/admin/individuals")
-                        .with(csrf())
-                        .with(user("admin"))
+                        .header("Authorization", "Bearer " + validToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -73,7 +101,7 @@ class IndividualControllerApiTest {
         when(individualService.getIndividualById(individualId)).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/admin/individuals/{id}", individualId)
-                        .with(user("admin")))
+                        .header("Authorization", "Bearer " + validToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(individualId.toString()))
                 .andExpect(jsonPath("$.name").value("John Doe"));
@@ -97,7 +125,7 @@ class IndividualControllerApiTest {
         mockMvc.perform(get("/api/v1/admin/individuals")
                         .param("page", "0")
                         .param("size", "20")
-                        .with(user("admin")))
+                        .header("Authorization", "Bearer " + validToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("John Doe"));
 
@@ -122,8 +150,7 @@ class IndividualControllerApiTest {
         when(individualService.updateIndividual(any(), any(), any())).thenReturn(response);
 
         mockMvc.perform(put("/api/v1/admin/individuals/{id}", individualId)
-                        .with(csrf())
-                        .with(user("admin"))
+                        .header("Authorization", "Bearer " + validToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -138,8 +165,7 @@ class IndividualControllerApiTest {
         UUID individualId = UUID.randomUUID();
 
         mockMvc.perform(delete("/api/v1/admin/individuals/{id}", individualId)
-                        .with(csrf())
-                        .with(user("admin")))
+                        .header("Authorization", "Bearer " + validToken))
                 .andExpect(status().isNoContent());
 
         verify(individualService).deleteIndividual(individualId);
@@ -151,8 +177,7 @@ class IndividualControllerApiTest {
         UUID individualId = UUID.randomUUID();
 
         mockMvc.perform(patch("/api/v1/admin/individuals/{id}/activate", individualId)
-                        .with(csrf())
-                        .with(user("admin")))
+                        .header("Authorization", "Bearer " + validToken))
                 .andExpect(status().isOk());
 
         verify(individualService).activateIndividual(individualId);
@@ -164,8 +189,7 @@ class IndividualControllerApiTest {
         UUID individualId = UUID.randomUUID();
 
         mockMvc.perform(patch("/api/v1/admin/individuals/{id}/deactivate", individualId)
-                        .with(csrf())
-                        .with(user("admin")))
+                        .header("Authorization", "Bearer " + validToken))
                 .andExpect(status().isOk());
 
         verify(individualService).deactivateIndividual(individualId);
@@ -177,8 +201,7 @@ class IndividualControllerApiTest {
         CreateIndividualRequest request = new CreateIndividualRequest();
 
         mockMvc.perform(post("/api/v1/admin/individuals")
-                        .with(csrf())
-                        .with(user("admin"))
+                        .header("Authorization", "Bearer " + validToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());

@@ -1,6 +1,8 @@
 package com.ganithyanthram.modularapp.entitlement.assignment.controller;
 
 import com.ganithyanthram.modularapp.config.ApiTest;
+import com.ganithyanthram.modularapp.config.JwtTestUtil;
+import com.ganithyanthram.modularapp.config.SecurityTestConfig;
 import com.ganithyanthram.modularapp.entitlement.assignment.dto.request.AssignRoleRequest;
 import com.ganithyanthram.modularapp.entitlement.assignment.dto.request.OverridePermissionRequest;
 import com.ganithyanthram.modularapp.entitlement.assignment.service.PermissionOverrideService;
@@ -8,9 +10,12 @@ import com.ganithyanthram.modularapp.entitlement.assignment.service.RoleAssignme
 import com.ganithyanthram.modularapp.entitlement.common.dto.RoleNode;
 import com.ganithyanthram.modularapp.entitlement.individual.dto.response.IndividualResponse;
 import com.ganithyanthram.modularapp.entitlement.role.dto.response.RoleResponse;
+import com.ganithyanthram.modularapp.security.service.CustomUserDetailsService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -23,12 +28,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @ApiTest(controllers = EntitlementAssignmentController.class)
+@Import(SecurityTestConfig.class)
 @DisplayName("EntitlementAssignmentController API Tests")
 class EntitlementAssignmentControllerApiTest {
 
@@ -37,6 +41,31 @@ class EntitlementAssignmentControllerApiTest {
 
     @Autowired
     private JsonMapper jsonMapper;
+
+    @Autowired
+    private JwtTestUtil jwtTestUtil;
+
+    @MockitoBean
+    private CustomUserDetailsService customUserDetailsService;
+
+    private String validToken;
+    private UUID testUserId;
+    private UUID testOrgId;
+
+    @BeforeEach
+    void setUp() {
+        testUserId = UUID.randomUUID();
+        testOrgId = UUID.randomUUID();
+        validToken = jwtTestUtil.generateAccessToken(testUserId, testOrgId, "test@example.com");
+        
+        org.springframework.security.core.userdetails.User mockUser = 
+            new org.springframework.security.core.userdetails.User(
+                "test@example.com",
+                "password",
+                java.util.Collections.emptyList()
+            );
+        when(customUserDetailsService.loadUserByUsername("test@example.com")).thenReturn(mockUser);
+    }
 
     @MockitoBean
     private RoleAssignmentService roleAssignmentService;
@@ -56,8 +85,7 @@ class EntitlementAssignmentControllerApiTest {
         when(roleAssignmentService.assignRole(any(), any())).thenReturn(expectedId);
 
         mockMvc.perform(post("/api/v1/admin/assignments/roles")
-                        .with(csrf())
-                        .with(user("admin"))
+                        .header("Authorization", "Bearer " + validToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -74,8 +102,7 @@ class EntitlementAssignmentControllerApiTest {
 
         mockMvc.perform(delete("/api/v1/admin/assignments/roles/{individualId}/{roleId}", 
                         individualId, roleId)
-                        .with(csrf())
-                        .with(user("admin")))
+                        .header("Authorization", "Bearer " + validToken))
                 .andExpect(status().isNoContent());
 
         verify(roleAssignmentService).revokeRole(individualId, roleId);
@@ -96,7 +123,7 @@ class EntitlementAssignmentControllerApiTest {
                 .thenReturn(List.of(role));
 
         mockMvc.perform(get("/api/v1/admin/assignments/individuals/{individualId}/roles", individualId)
-                        .with(user("admin")))
+                        .header("Authorization", "Bearer " + validToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Admin Role"));
 
@@ -120,7 +147,7 @@ class EntitlementAssignmentControllerApiTest {
 
         mockMvc.perform(get("/api/v1/admin/assignments/individuals/{individualId}/roles", individualId)
                         .param("orgId", orgId.toString())
-                        .with(user("admin")))
+                        .header("Authorization", "Bearer " + validToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Org Admin Role"));
 
@@ -142,7 +169,7 @@ class EntitlementAssignmentControllerApiTest {
                 .thenReturn(List.of(individual));
 
         mockMvc.perform(get("/api/v1/admin/assignments/roles/{roleId}/individuals", roleId)
-                        .with(user("admin")))
+                        .header("Authorization", "Bearer " + validToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("John Doe"));
 
@@ -161,8 +188,7 @@ class EntitlementAssignmentControllerApiTest {
         when(permissionOverrideService.overridePermissions(any(), any())).thenReturn(expectedId);
 
         mockMvc.perform(post("/api/v1/admin/assignments/permissions")
-                        .with(csrf())
-                        .with(user("admin"))
+                        .header("Authorization", "Bearer " + validToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -186,7 +212,7 @@ class EntitlementAssignmentControllerApiTest {
 
         mockMvc.perform(get("/api/v1/admin/assignments/individuals/{individualId}/permissions", individualId)
                         .param("orgId", orgId.toString())
-                        .with(user("admin")))
+                        .header("Authorization", "Bearer " + validToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("dashboard"))
                 .andExpect(jsonPath("$[0].permissions").value(15));

@@ -50,6 +50,11 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/health").permitAll()
                         
+                        // Public endpoints - Swagger/OpenAPI documentation
+                        .requestMatchers("/v3/api-docs/**").permitAll()
+                        .requestMatchers("/swagger-ui/**").permitAll()
+                        .requestMatchers("/swagger-ui.html").permitAll()
+                        
                         // Admin endpoints - require authentication
                         .requestMatchers("/api/v1/admin/**").authenticated()
                         

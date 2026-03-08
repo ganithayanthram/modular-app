@@ -6,6 +6,14 @@ import com.ganithyanthram.modularapp.entitlement.common.dto.RoleNode;
 import com.ganithyanthram.modularapp.entitlement.resource.dto.response.ResourceResponse;
 import com.ganithyanthram.modularapp.entitlement.resource.service.ResourceService;
 import com.ganithyanthram.modularapp.security.annotation.CurrentUser;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +31,8 @@ import java.util.UUID;
 @RequestMapping("/api/v1/user/entitlements")
 @RequiredArgsConstructor
 @PreAuthorize("isAuthenticated()")
+@Tag(name = "User Entitlements", description = "User endpoints for viewing their own entitlements and permissions")
+@SecurityRequirement(name = "bearerAuth")
 public class UserEntitlementController {
     
     private final PermissionOverrideService permissionOverrideService;

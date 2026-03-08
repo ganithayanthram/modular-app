@@ -6,6 +6,13 @@ import com.ganithyanthram.modularapp.security.dto.LoginRequest;
 import com.ganithyanthram.modularapp.security.dto.RefreshTokenRequest;
 import com.ganithyanthram.modularapp.security.dto.RefreshTokenResponse;
 import com.ganithyanthram.modularapp.security.service.AuthenticationService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +32,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
+@Tag(name = "Authentication", description = "Authentication and authorization endpoints")
 public class AuthenticationController {
     
     private final AuthenticationService authenticationService;
@@ -35,6 +43,27 @@ public class AuthenticationController {
      * @param request Login credentials
      * @return Authentication response with access and refresh tokens
      */
+    @Operation(
+        summary = "Login",
+        description = "Authenticate user with email and password. Returns JWT access token and refresh token."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Login successful",
+            content = @Content(schema = @Schema(implementation = AuthenticationResponse.class))
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Invalid credentials",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid request body",
+            content = @Content
+        )
+    })
     @PostMapping("/login")
     public ResponseEntity<AuthenticationResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthenticationResponse response = authenticationService.login(request);
@@ -47,6 +76,22 @@ public class AuthenticationController {
      * @param request Refresh token request
      * @return New access token
      */
+    @Operation(
+        summary = "Refresh Token",
+        description = "Generate a new access token using a valid refresh token"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Token refreshed successfully",
+            content = @Content(schema = @Schema(implementation = RefreshTokenResponse.class))
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Invalid or expired refresh token",
+            content = @Content
+        )
+    })
     @PostMapping("/refresh")
     public ResponseEntity<RefreshTokenResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
         RefreshTokenResponse response = authenticationService.refreshToken(request);
@@ -59,6 +104,17 @@ public class AuthenticationController {
      * @param authentication Current authentication
      * @return Success message
      */
+    @Operation(
+        summary = "Logout",
+        description = "Logout the current user. Client should discard the JWT token after this call."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Logout successful"
+        )
+    })
+    @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/logout")
     public ResponseEntity<Map<String, String>> logout(Authentication authentication) {
         if (authentication != null && authentication.isAuthenticated()) {

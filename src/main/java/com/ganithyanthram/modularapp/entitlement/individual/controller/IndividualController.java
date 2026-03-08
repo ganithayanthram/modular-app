@@ -5,6 +5,14 @@ import com.ganithyanthram.modularapp.entitlement.individual.dto.request.UpdateIn
 import com.ganithyanthram.modularapp.entitlement.individual.dto.response.IndividualResponse;
 import com.ganithyanthram.modularapp.entitlement.individual.service.IndividualService;
 import com.ganithyanthram.modularapp.security.annotation.CurrentUser;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +33,8 @@ import java.util.UUID;
 @RequestMapping("/api/v1/admin/individuals")
 @RequiredArgsConstructor
 @PreAuthorize("isAuthenticated()")
+@Tag(name = "Individual Management", description = "Admin endpoints for managing individuals (users)")
+@SecurityRequirement(name = "bearerAuth")
 public class IndividualController {
     
     private final IndividualService individualService;
@@ -33,9 +43,29 @@ public class IndividualController {
      * Create a new individual
      * POST /api/v1/admin/individuals
      */
+    @Operation(
+        summary = "Create Individual",
+        description = "Create a new individual (user) in the system"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "201",
+            description = "Individual created successfully"
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid request body",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @PostMapping
     public ResponseEntity<Map<String, UUID>> createIndividual(
-            @CurrentUser UUID userId,
+            @Parameter(hidden = true) @CurrentUser UUID userId,
             @Valid @RequestBody CreateIndividualRequest request) {
         
         UUID id = individualService.createIndividual(request, userId);
@@ -48,8 +78,30 @@ public class IndividualController {
      * Get individual by ID
      * GET /api/v1/admin/individuals/{id}
      */
+    @Operation(
+        summary = "Get Individual by ID",
+        description = "Retrieve detailed information about a specific individual"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Individual found",
+            content = @Content(schema = @Schema(implementation = IndividualResponse.class))
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Individual not found",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @GetMapping("/{id}")
-    public ResponseEntity<IndividualResponse> getIndividualById(@PathVariable UUID id) {
+    public ResponseEntity<IndividualResponse> getIndividualById(
+            @Parameter(description = "Individual ID") @PathVariable UUID id) {
         IndividualResponse response = individualService.getIndividualById(id);
         return ResponseEntity.ok(response);
     }

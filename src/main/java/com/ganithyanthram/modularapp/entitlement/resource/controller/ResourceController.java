@@ -5,6 +5,14 @@ import com.ganithyanthram.modularapp.entitlement.resource.dto.request.UpdateReso
 import com.ganithyanthram.modularapp.entitlement.resource.dto.response.ResourceResponse;
 import com.ganithyanthram.modularapp.entitlement.resource.service.ResourceService;
 import com.ganithyanthram.modularapp.security.annotation.CurrentUser;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +33,8 @@ import java.util.UUID;
 @RequestMapping("/api/v1/admin/resources")
 @RequiredArgsConstructor
 @PreAuthorize("isAuthenticated()")
+@Tag(name = "Resource Management", description = "Admin endpoints for managing hierarchical resources (menus, pages, actions)")
+@SecurityRequirement(name = "bearerAuth")
 public class ResourceController {
     
     private final ResourceService resourceService;

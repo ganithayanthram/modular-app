@@ -8,6 +8,14 @@ import com.ganithyanthram.modularapp.entitlement.common.dto.RoleNode;
 import com.ganithyanthram.modularapp.entitlement.individual.dto.response.IndividualResponse;
 import com.ganithyanthram.modularapp.entitlement.role.dto.response.RoleResponse;
 import com.ganithyanthram.modularapp.security.annotation.CurrentUser;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +36,8 @@ import java.util.UUID;
 @RequestMapping("/api/v1/admin/assignments")
 @RequiredArgsConstructor
 @PreAuthorize("isAuthenticated()")
+@Tag(name = "Entitlement Assignment", description = "Admin endpoints for assigning roles and overriding permissions")
+@SecurityRequirement(name = "bearerAuth")
 public class EntitlementAssignmentController {
     
     private final RoleAssignmentService roleAssignmentService;

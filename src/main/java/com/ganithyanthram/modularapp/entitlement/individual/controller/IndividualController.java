@@ -110,10 +110,28 @@ public class IndividualController {
      * List all individuals with pagination and search
      * GET /api/v1/admin/individuals
      */
+    @Operation(
+        summary = "List Individuals",
+        description = "Retrieve a paginated list of all individuals. Supports optional search filtering by name or email."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Individuals retrieved successfully"
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @GetMapping
     public ResponseEntity<List<IndividualResponse>> getAllIndividuals(
+            @Parameter(description = "Page number (0-indexed)", example = "0")
             @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size", example = "20")
             @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "Search term to filter individuals by name or email")
             @RequestParam(required = false) String search) {
         
         List<IndividualResponse> individuals = individualService.getAllIndividuals(page, size, search);
@@ -124,10 +142,36 @@ public class IndividualController {
      * Update individual
      * PUT /api/v1/admin/individuals/{id}
      */
+    @Operation(
+        summary = "Update Individual",
+        description = "Update an existing individual's details"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Individual updated successfully",
+            content = @Content(schema = @Schema(implementation = IndividualResponse.class))
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid request body or validation error",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Individual not found",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @PutMapping("/{id}")
     public ResponseEntity<IndividualResponse> updateIndividual(
-            @CurrentUser UUID userId,
-            @PathVariable UUID id,
+            @Parameter(hidden = true) @CurrentUser UUID userId,
+            @Parameter(description = "Individual ID") @PathVariable UUID id,
             @Valid @RequestBody UpdateIndividualRequest request) {
         
         IndividualResponse response = individualService.updateIndividual(id, request, userId);
@@ -139,8 +183,29 @@ public class IndividualController {
      * Delete individual (soft delete)
      * DELETE /api/v1/admin/individuals/{id}
      */
+    @Operation(
+        summary = "Delete Individual",
+        description = "Soft delete an individual. The individual will be marked as inactive but not removed from the database."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "204",
+            description = "Individual deleted successfully"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Individual not found",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteIndividual(@PathVariable UUID id) {
+    public ResponseEntity<Void> deleteIndividual(
+            @Parameter(description = "Individual ID") @PathVariable UUID id) {
         individualService.deleteIndividual(id);
         return ResponseEntity.noContent().build();
     }
@@ -149,8 +214,29 @@ public class IndividualController {
      * Activate individual
      * PATCH /api/v1/admin/individuals/{id}/activate
      */
+    @Operation(
+        summary = "Activate Individual",
+        description = "Activate an individual, allowing them to access the system"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Individual activated successfully"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Individual not found",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @PatchMapping("/{id}/activate")
-    public ResponseEntity<Void> activateIndividual(@PathVariable UUID id) {
+    public ResponseEntity<Void> activateIndividual(
+            @Parameter(description = "Individual ID") @PathVariable UUID id) {
         individualService.activateIndividual(id);
         return ResponseEntity.ok().build();
     }
@@ -159,8 +245,29 @@ public class IndividualController {
      * Deactivate individual
      * PATCH /api/v1/admin/individuals/{id}/deactivate
      */
+    @Operation(
+        summary = "Deactivate Individual",
+        description = "Deactivate an individual, preventing them from accessing the system"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Individual deactivated successfully"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Individual not found",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @PatchMapping("/{id}/deactivate")
-    public ResponseEntity<Void> deactivateIndividual(@PathVariable UUID id) {
+    public ResponseEntity<Void> deactivateIndividual(
+            @Parameter(description = "Individual ID") @PathVariable UUID id) {
         individualService.deactivateIndividual(id);
         return ResponseEntity.ok().build();
     }

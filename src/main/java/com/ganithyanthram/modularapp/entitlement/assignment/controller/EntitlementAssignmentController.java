@@ -47,9 +47,34 @@ public class EntitlementAssignmentController {
      * Assign role to individual
      * POST /api/v1/admin/assignments/roles
      */
+    @Operation(
+        summary = "Assign Role",
+        description = "Assign a role to an individual in a specific organization"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "201",
+            description = "Role assigned successfully"
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid request body or validation error",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Individual or role not found",
+            content = @Content
+        )
+    })
     @PostMapping("/roles")
     public ResponseEntity<Map<String, UUID>> assignRole(
-            @CurrentUser UUID userId,
+            @Parameter(hidden = true) @CurrentUser UUID userId,
             @Valid @RequestBody AssignRoleRequest request) {
         
         UUID id = roleAssignmentService.assignRole(request, userId);
@@ -62,10 +87,30 @@ public class EntitlementAssignmentController {
      * Revoke role from individual
      * DELETE /api/v1/admin/assignments/roles/{individualId}/{roleId}
      */
+    @Operation(
+        summary = "Revoke Role",
+        description = "Revoke a role from an individual"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "204",
+            description = "Role revoked successfully"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Individual or role assignment not found",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @DeleteMapping("/roles/{individualId}/{roleId}")
     public ResponseEntity<Void> revokeRole(
-            @PathVariable UUID individualId,
-            @PathVariable UUID roleId) {
+            @Parameter(description = "Individual ID") @PathVariable UUID individualId,
+            @Parameter(description = "Role ID") @PathVariable UUID roleId) {
         
         roleAssignmentService.revokeRole(individualId, roleId);
         return ResponseEntity.noContent().build();
@@ -75,10 +120,30 @@ public class EntitlementAssignmentController {
      * Get roles for individual
      * GET /api/v1/admin/assignments/individuals/{individualId}/roles
      */
+    @Operation(
+        summary = "Get Roles for Individual",
+        description = "Retrieve all roles assigned to an individual, optionally filtered by organization"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Roles retrieved successfully"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Individual not found",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @GetMapping("/individuals/{individualId}/roles")
     public ResponseEntity<List<RoleResponse>> getRolesForIndividual(
-            @PathVariable UUID individualId,
-            @RequestParam(required = false) UUID orgId) {
+            @Parameter(description = "Individual ID") @PathVariable UUID individualId,
+            @Parameter(description = "Filter by organization ID (optional)") @RequestParam(required = false) UUID orgId) {
         
         List<RoleResponse> roles;
         if (orgId != null) {
@@ -94,8 +159,29 @@ public class EntitlementAssignmentController {
      * Get individuals with role
      * GET /api/v1/admin/assignments/roles/{roleId}/individuals
      */
+    @Operation(
+        summary = "Get Individuals with Role",
+        description = "Retrieve all individuals who have been assigned a specific role"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Individuals retrieved successfully"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Role not found",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @GetMapping("/roles/{roleId}/individuals")
-    public ResponseEntity<List<IndividualResponse>> getIndividualsWithRole(@PathVariable UUID roleId) {
+    public ResponseEntity<List<IndividualResponse>> getIndividualsWithRole(
+            @Parameter(description = "Role ID") @PathVariable UUID roleId) {
         List<IndividualResponse> individuals = roleAssignmentService.getIndividualsByRole(roleId);
         return ResponseEntity.ok(individuals);
     }
@@ -104,9 +190,34 @@ public class EntitlementAssignmentController {
      * Override permissions for individual
      * POST /api/v1/admin/assignments/permissions
      */
+    @Operation(
+        summary = "Override Permissions",
+        description = "Override specific permissions for an individual on a resource, superseding role-based permissions"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "201",
+            description = "Permission override created successfully"
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid request body or validation error",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Individual or resource not found",
+            content = @Content
+        )
+    })
     @PostMapping("/permissions")
     public ResponseEntity<Map<String, UUID>> overridePermissions(
-            @CurrentUser UUID userId,
+            @Parameter(hidden = true) @CurrentUser UUID userId,
             @Valid @RequestBody OverridePermissionRequest request) {
         
         UUID id = permissionOverrideService.overridePermissions(request, userId);
@@ -119,10 +230,30 @@ public class EntitlementAssignmentController {
      * Get effective permissions for individual
      * GET /api/v1/admin/assignments/individuals/{individualId}/permissions
      */
+    @Operation(
+        summary = "Get Effective Permissions",
+        description = "Retrieve the effective permissions for an individual in an organization, including role-based and overridden permissions"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Permissions retrieved successfully"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Individual not found",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @GetMapping("/individuals/{individualId}/permissions")
     public ResponseEntity<List<RoleNode>> getEffectivePermissions(
-            @PathVariable UUID individualId,
-            @RequestParam UUID orgId) {
+            @Parameter(description = "Individual ID") @PathVariable UUID individualId,
+            @Parameter(description = "Organization ID", required = true) @RequestParam UUID orgId) {
         
         List<RoleNode> permissions = permissionOverrideService.getEffectivePermissions(individualId, orgId);
         return ResponseEntity.ok(permissions);

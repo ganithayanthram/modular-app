@@ -42,8 +42,25 @@ public class UserEntitlementController {
      * Get current user's complete entitlements
      * GET /api/v1/user/entitlements
      */
+    @Operation(
+        summary = "Get My Entitlements",
+        description = "Retrieve the current user's complete entitlements including all roles and permissions across organizations"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Entitlements retrieved successfully",
+            content = @Content(schema = @Schema(implementation = UserEntitlementResponse.class))
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @GetMapping
-    public ResponseEntity<UserEntitlementResponse> getMyEntitlements(@CurrentUser UUID currentUserId) {
+    public ResponseEntity<UserEntitlementResponse> getMyEntitlements(
+            @Parameter(hidden = true) @CurrentUser UUID currentUserId) {
         UserEntitlementResponse response = permissionOverrideService.getUserEntitlements(currentUserId);
         return ResponseEntity.ok(response);
     }
@@ -52,10 +69,25 @@ public class UserEntitlementController {
      * Get current user's permissions for a specific organisation
      * GET /api/v1/user/entitlements/permissions
      */
+    @Operation(
+        summary = "Get My Permissions",
+        description = "Retrieve the current user's effective permissions for a specific organization"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Permissions retrieved successfully"
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @GetMapping("/permissions")
     public ResponseEntity<List<RoleNode>> getMyPermissions(
-            @CurrentUser UUID currentUserId,
-            @RequestParam UUID orgId) {
+            @Parameter(hidden = true) @CurrentUser UUID currentUserId,
+            @Parameter(description = "Organization ID", required = true) @RequestParam UUID orgId) {
         
         List<RoleNode> permissions = permissionOverrideService.getEffectivePermissions(currentUserId, orgId);
         return ResponseEntity.ok(permissions);
@@ -65,6 +97,21 @@ public class UserEntitlementController {
      * Get resource hierarchy (for navigation/menu building)
      * GET /api/v1/user/entitlements/resources
      */
+    @Operation(
+        summary = "Get Resource Hierarchy",
+        description = "Retrieve the complete resource hierarchy for building navigation menus and UI"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Resource hierarchy retrieved successfully"
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @GetMapping("/resources")
     public ResponseEntity<List<ResourceResponse>> getResourceHierarchy() {
         List<ResourceResponse> hierarchy = resourceService.getResourceHierarchy();
@@ -75,12 +122,27 @@ public class UserEntitlementController {
      * Check if user has specific permission
      * GET /api/v1/user/entitlements/check
      */
+    @Operation(
+        summary = "Check Permission",
+        description = "Check if the current user has a specific permission for a resource and action in an organization"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Permission check completed"
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @GetMapping("/check")
     public ResponseEntity<Boolean> checkPermission(
-            @CurrentUser UUID currentUserId,
-            @RequestParam UUID orgId,
-            @RequestParam String resource,
-            @RequestParam String action) {
+            @Parameter(hidden = true) @CurrentUser UUID currentUserId,
+            @Parameter(description = "Organization ID", required = true) @RequestParam UUID orgId,
+            @Parameter(description = "Resource name", required = true, example = "users") @RequestParam String resource,
+            @Parameter(description = "Action to check", required = true, example = "read") @RequestParam String action) {
         
         List<RoleNode> permissions = permissionOverrideService.getEffectivePermissions(currentUserId, orgId);
         boolean hasPermission = hasPermission(permissions, resource, action);

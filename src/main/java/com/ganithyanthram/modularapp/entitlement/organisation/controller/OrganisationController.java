@@ -43,9 +43,29 @@ public class OrganisationController {
      * Create a new organisation
      * POST /api/v1/admin/organisations
      */
+    @Operation(
+        summary = "Create Organization",
+        description = "Create a new organization in the system. Organizations are used for tenant isolation and grouping users."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "201",
+            description = "Organization created successfully"
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid request body or validation error",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized - JWT token missing or invalid",
+            content = @Content
+        )
+    })
     @PostMapping
     public ResponseEntity<Map<String, UUID>> createOrganisation(
-            @CurrentUser UUID userId,
+            @Parameter(hidden = true) @CurrentUser UUID userId,
             @Valid @RequestBody CreateOrganisationRequest request) {
         
         UUID id = organisationService.createOrganisation(request, userId);
@@ -58,8 +78,31 @@ public class OrganisationController {
      * Get organisation by ID
      * GET /api/v1/admin/organisations/{id}
      */
+    @Operation(
+        summary = "Get Organization by ID",
+        description = "Retrieve detailed information about a specific organization"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Organization found",
+            content = @Content(schema = @Schema(implementation = OrganisationResponse.class))
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Organization not found",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @GetMapping("/{id}")
-    public ResponseEntity<OrganisationResponse> getOrganisationById(@PathVariable UUID id) {
+    public ResponseEntity<OrganisationResponse> getOrganisationById(
+            @Parameter(description = "Organization ID", example = "123e4567-e89b-12d3-a456-426614174000") 
+            @PathVariable UUID id) {
         OrganisationResponse response = organisationService.getOrganisationById(id);
         return ResponseEntity.ok(response);
     }
@@ -68,10 +111,28 @@ public class OrganisationController {
      * List all organisations with pagination and search
      * GET /api/v1/admin/organisations
      */
+    @Operation(
+        summary = "List Organizations",
+        description = "Retrieve a paginated list of all organizations. Supports optional search filtering."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Organizations retrieved successfully"
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @GetMapping
     public ResponseEntity<List<OrganisationResponse>> getAllOrganisations(
+            @Parameter(description = "Page number (0-indexed)", example = "0")
             @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size", example = "20")
             @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "Search term to filter organizations by name")
             @RequestParam(required = false) String search) {
         
         List<OrganisationResponse> organisations = organisationService.getAllOrganisations(page, size, search);
@@ -82,10 +143,36 @@ public class OrganisationController {
      * Update organisation
      * PUT /api/v1/admin/organisations/{id}
      */
+    @Operation(
+        summary = "Update Organization",
+        description = "Update an existing organization's details"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Organization updated successfully",
+            content = @Content(schema = @Schema(implementation = OrganisationResponse.class))
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid request body or validation error",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Organization not found",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @PutMapping("/{id}")
     public ResponseEntity<OrganisationResponse> updateOrganisation(
-            @CurrentUser UUID userId,
-            @PathVariable UUID id,
+            @Parameter(hidden = true) @CurrentUser UUID userId,
+            @Parameter(description = "Organization ID") @PathVariable UUID id,
             @Valid @RequestBody UpdateOrganisationRequest request) {
         
         OrganisationResponse response = organisationService.updateOrganisation(id, request, userId);
@@ -97,8 +184,29 @@ public class OrganisationController {
      * Delete organisation (soft delete)
      * DELETE /api/v1/admin/organisations/{id}
      */
+    @Operation(
+        summary = "Delete Organization",
+        description = "Soft delete an organization. The organization will be marked as inactive but not removed from the database."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "204",
+            description = "Organization deleted successfully"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Organization not found",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteOrganisation(@PathVariable UUID id) {
+    public ResponseEntity<Void> deleteOrganisation(
+            @Parameter(description = "Organization ID") @PathVariable UUID id) {
         organisationService.deleteOrganisation(id);
         return ResponseEntity.noContent().build();
     }
@@ -107,8 +215,29 @@ public class OrganisationController {
      * Activate organisation
      * PATCH /api/v1/admin/organisations/{id}/activate
      */
+    @Operation(
+        summary = "Activate Organization",
+        description = "Activate an organization, allowing its users to access the system"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Organization activated successfully"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Organization not found",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @PatchMapping("/{id}/activate")
-    public ResponseEntity<Void> activateOrganisation(@PathVariable UUID id) {
+    public ResponseEntity<Void> activateOrganisation(
+            @Parameter(description = "Organization ID") @PathVariable UUID id) {
         organisationService.activateOrganisation(id);
         return ResponseEntity.ok().build();
     }
@@ -117,8 +246,29 @@ public class OrganisationController {
      * Deactivate organisation
      * PATCH /api/v1/admin/organisations/{id}/deactivate
      */
+    @Operation(
+        summary = "Deactivate Organization",
+        description = "Deactivate an organization, preventing its users from accessing the system"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Organization deactivated successfully"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Organization not found",
+            content = @Content
+        ),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Unauthorized",
+            content = @Content
+        )
+    })
     @PatchMapping("/{id}/deactivate")
-    public ResponseEntity<Void> deactivateOrganisation(@PathVariable UUID id) {
+    public ResponseEntity<Void> deactivateOrganisation(
+            @Parameter(description = "Organization ID") @PathVariable UUID id) {
         organisationService.deactivateOrganisation(id);
         return ResponseEntity.ok().build();
     }
